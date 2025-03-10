@@ -28,74 +28,48 @@ import {
 } from "@/components/ui/dropdown-menu"
 import {Input} from "@/components/ui/input"
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table"
-import ProductTable from "./dat"
 
-// Sample data for E_Order_Form
-const data: OrderForm[] = [
+const data: Payment[] = [
     {
-        id: "1",
-        comment_po_no: "PO-12345",
-        brand: "BrandA",
-        sub_brand: "Premium",
-        product_group: "Food",
-        nrv: 100,
-        pack: 24,
-        tto_tts: "TTO-001",
-        material: "Plastic",
-        customer_code: "CUST001",
-        item_description: "Premium Food Product A",
-        value_rs: 2500.50,
-        strategic_group: "High Value"
+        id: "m5gr84i9",
+        amount: 316,
+        status: "success",
+        email: "ken99@example.com",
     },
     {
-        id: "2",
-        comment_po_no: "PO-67890",
-        brand: "BrandB",
-        sub_brand: "Standard",
-        product_group: "Beverage",
-        nrv: 80,
-        pack: 12,
-        tto_tts: "TTS-002",
-        material: "Glass",
-        customer_code: "CUST002",
-        item_description: "Standard Beverage Product B",
-        value_rs: 1200.75,
-        strategic_group: "Medium Value"
+        id: "3u1reuv4",
+        amount: 242,
+        status: "success",
+        email: "Abe45@example.com",
     },
     {
-        id: "3",
-        comment_po_no: "PO-54321",
-        brand: "BrandC",
-        sub_brand: "Economy",
-        product_group: "Household",
-        nrv: 50,
-        pack: 36,
-        tto_tts: "TTO-003",
-        material: "Cardboard",
-        customer_code: "CUST003",
-        item_description: "Economy Household Product C",
-        value_rs: 850.25,
-        strategic_group: "Economy"
+        id: "derv1ws0",
+        amount: 837,
+        status: "processing",
+        email: "Monserrat44@example.com",
+    },
+    {
+        id: "5kma53ae",
+        amount: 874,
+        status: "success",
+        email: "Silas22@example.com",
+    },
+    {
+        id: "bhqecj4p",
+        amount: 721,
+        status: "failed",
+        email: "carmella@example.com",
     },
 ]
 
-export type OrderForm = {
+export type Payment = {
     id: string
-    comment_po_no: string
-    brand: string
-    sub_brand: string
-    product_group: string
-    nrv: number
-    pack: number
-    tto_tts: string
-    material: string
-    customer_code: string
-    item_description: string
-    value_rs: number
-    strategic_group: string
+    amount: number
+    status: "pending" | "processing" | "success" | "failed"
+    email: string
 }
 
-export const columns: ColumnDef<OrderForm>[] = [
+export const columns: ColumnDef<Payment>[] = [
     {
         id: "select",
         header: ({table}) => (
@@ -104,14 +78,14 @@ export const columns: ColumnDef<OrderForm>[] = [
                     table.getIsAllPageRowsSelected() ||
                     (table.getIsSomePageRowsSelected() && "indeterminate")
                 }
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                onCheckedChange={(value: any) => table.toggleAllPageRowsSelected(!!value)}
                 aria-label="Select all"
             />
         ),
         cell: ({row}) => (
             <Checkbox
                 checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
+                onCheckedChange={(value: any) => row.toggleSelected(!!value)}
                 aria-label="Select row"
             />
         ),
@@ -119,102 +93,66 @@ export const columns: ColumnDef<OrderForm>[] = [
         enableHiding: false,
     },
     {
-        accessorKey: "comment_po_no",
+        accessorKey: "status",
+        header: "Status",
+        cell: ({row}) => (
+            <div className="capitalize">{row.getValue("status")}</div>
+        ),
+    },
+    {
+        accessorKey: "email",
         header: ({column}) => {
             return (
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
-                    PO Number
-                    <ArrowUpDown className="ml-2 h-4 w-4"/>
+                    Email
+                    <ArrowUpDown/>
                 </Button>
             )
         },
+        cell: ({row}) => <div className="lowercase">{row.getValue("email")}</div>,
     },
     {
-        accessorKey: "brand",
-        header: "Brand",
-    },
-    {
-        accessorKey: "sub_brand",
-        header: "Sub Brand",
-    },
-    {
-        accessorKey: "product_group",
-        header: "Product Group",
-    },
-    {
-        accessorKey: "nrv",
-        header: () => <div className="text-right">NRV</div>,
+        accessorKey: "amount",
+        header: () => <div className="text-right">Amount</div>,
         cell: ({row}) => {
-            return <div className="text-right font-medium">{row.getValue("nrv")}</div>
-        },
-    },
-    {
-        accessorKey: "pack",
-        header: () => <div className="text-right">Pack</div>,
-        cell: ({row}) => {
-            return <div className="text-right font-medium">{row.getValue("pack")}</div>
-        },
-    },
-    {
-        accessorKey: "tto_tts",
-        header: "TTO/TTS",
-    },
-    {
-        accessorKey: "material",
-        header: "Material",
-    },
-    {
-        accessorKey: "customer_code",
-        header: "Customer Code",
-    },
-    {
-        accessorKey: "item_description",
-        header: "Item Description",
-    },
-    {
-        accessorKey: "value_rs",
-        header: () => <div className="text-right">Value (Rs)</div>,
-        cell: ({row}) => {
-            const amount = parseFloat(row.getValue("value_rs"))
-            const formatted = new Intl.NumberFormat("en-IN", {
+            const amount = parseFloat(row.getValue("amount"))
+
+            // Format the amount as a dollar amount
+            const formatted = new Intl.NumberFormat("en-US", {
                 style: "currency",
-                currency: "INR",
+                currency: "USD",
             }).format(amount)
 
             return <div className="text-right font-medium">{formatted}</div>
         },
     },
     {
-        accessorKey: "strategic_group",
-        header: "Strategic Group",
-    },
-    {
         id: "actions",
         enableHiding: false,
         cell: ({row}) => {
-            const order = row.original
+            const payment = row.original
 
             return (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
                             <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4"/>
+                            <MoreHorizontal/>
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem
-                            onClick={() => navigator.clipboard.writeText(order.id)}
+                            onClick={() => navigator.clipboard.writeText(payment.id)}
                         >
-                            Copy order ID
+                            Copy payment ID
                         </DropdownMenuItem>
                         <DropdownMenuSeparator/>
-                        <DropdownMenuItem>View order details</DropdownMenuItem>
-                        <DropdownMenuItem>Edit order</DropdownMenuItem>
+                        <DropdownMenuItem>View customer</DropdownMenuItem>
+                        <DropdownMenuItem>View payment details</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             )
@@ -222,10 +160,13 @@ export const columns: ColumnDef<OrderForm>[] = [
     },
 ]
 
-export default function EOrderFormTable() {
+export function DataTableDemo() {
     const [sorting, setSorting] = React.useState<SortingState>([])
-    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+        []
+    )
+    const [columnVisibility, setColumnVisibility] =
+        React.useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = React.useState({})
 
     const table = useReactTable({
@@ -249,20 +190,19 @@ export default function EOrderFormTable() {
 
     return (
         <div className="w-full">
-            <ProductTable/>
             <div className="flex items-center py-4">
                 <Input
-                    placeholder="Filter by PO number..."
-                    value={(table.getColumn("comment_po_no")?.getFilterValue() as string) ?? ""}
+                    placeholder="Filter emails..."
+                    value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
                     onChange={(event) =>
-                        table.getColumn("comment_po_no")?.setFilterValue(event.target.value)
+                        table.getColumn("email")?.setFilterValue(event.target.value)
                     }
                     className="max-w-sm"
                 />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="ml-auto">
-                            Columns <ChevronDown className="ml-2 h-4 w-4"/>
+                            Columns <ChevronDown/>
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -275,7 +215,7 @@ export default function EOrderFormTable() {
                                         key={column.id}
                                         className="capitalize"
                                         checked={column.getIsVisible()}
-                                        onCheckedChange={(value) =>
+                                        onCheckedChange={(value: any) =>
                                             column.toggleVisibility(!!value)
                                         }
                                     >
