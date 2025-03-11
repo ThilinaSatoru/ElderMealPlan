@@ -1,6 +1,6 @@
 "use client"
-import {useState} from "react";
-import {useRouter} from "next/compat/router";
+import {useEffect, useState} from "react";
+import {useRouter} from "next/navigation";
 import {Card, CardContent} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {Checkbox} from "@/components/ui/checkbox";
@@ -79,8 +79,8 @@ const products: OrderForm[] = [
 ];
 
 export default function ProductTable() {
-    const [selectedProducts, setSelectedProducts] = useState<OrderForm[]>([]);
     const router = useRouter();
+    const [selectedProducts, setSelectedProducts] = useState<OrderForm[]>([]);
 
     const handleSelect = (product: OrderForm) => {
         setSelectedProducts((prev) => {
@@ -89,12 +89,15 @@ export default function ProductTable() {
         });
     };
 
+    useEffect(() => {
+        if (!router) return;
+    }, [router]);
+
+
     const handleSubmit = () => {
+        if (!router) return; // Prevent errors if router is undefined
         if (selectedProducts.length > 0) {
-            router.push({
-                pathname: "/product-detail",
-                query: {products: JSON.stringify(selectedProducts)},
-            });
+            router.push("/customer");
         }
     };
 
@@ -107,11 +110,7 @@ export default function ProductTable() {
                     </BreadcrumbItem>
                     <BreadcrumbSeparator/>
                     <BreadcrumbItem>
-                        <BreadcrumbLink href="/components">Components</BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator/>
-                    <BreadcrumbItem>
-                        <BreadcrumbPage>Breadcrumb</BreadcrumbPage>
+                        <BreadcrumbPage>Products</BreadcrumbPage>
                     </BreadcrumbItem>
                 </BreadcrumbList>
             </Breadcrumb>
