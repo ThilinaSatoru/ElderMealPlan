@@ -65,7 +65,7 @@ async function getProducts(): Promise<Products[]> {
     ];
 }
 
-export async function getCustomers(): Promise<Customers[]> {
+async function getCustomers(): Promise<Customers[]> {
     return [
         {
             Customer: 1,
