@@ -355,26 +355,22 @@ export default function Home() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-2 px-2 sm:px-6">
-                            <Card className="shadow-lg rounded-2xl">
-                                <CardContent className="p-2 sm:p-6">
-                                    <div className="py-4">
-                                        {isMobile ? (
-                                            <MobileTable
-                                                data={productData}
-                                                columns={product_columns}
-                                                onItemClick={handleMobileProductSelect}
-                                                selectedItems={selectedProducts} // Pass selected products
-                                            />
-                                        ) : (
-                                            <DataTable
-                                                columns={product_columns}
-                                                data={productData}
-                                                onSelectionChange={handleProductSelectionChange}
-                                            />
-                                        )}
-                                    </div>
-                                </CardContent>
-                            </Card>
+                            <div className="py-4">
+                                {isMobile ? (
+                                    <MobileTable
+                                        data={productData}
+                                        columns={product_columns}
+                                        onItemClick={handleMobileProductSelect}
+                                        selectedItems={selectedProducts} // Pass selected products
+                                    />
+                                ) : (
+                                    <DataTable
+                                        columns={product_columns}
+                                        data={productData}
+                                        onSelectionChange={handleProductSelectionChange}
+                                    />
+                                )}
+                            </div>
                         </CardContent>
                         <CardFooter className="px-4 sm:px-6">
                             <Button
@@ -397,26 +393,22 @@ export default function Home() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-2 px-2 sm:px-6">
-                            <Card className="shadow-lg rounded-2xl">
-                                <CardContent className="p-2 sm:p-6">
-                                    <div className="py-4">
-                                        {isMobile ? (
-                                            <MobileTable
-                                                data={customerData}
-                                                columns={customer_columns}
-                                                onItemClick={handleMobileCustomerSelect}
-                                                selectedItems={selectedCustomers} // Pass selected customers
-                                            />
-                                        ) : (
-                                            <DataTable
-                                                columns={customer_columns}
-                                                data={customerData}
-                                                onSelectionChange={handleCustomerSelectionChange}
-                                            />
-                                        )}
-                                    </div>
-                                </CardContent>
-                            </Card>
+                            <div className="py-4">
+                                {isMobile ? (
+                                    <MobileTable
+                                        data={customerData}
+                                        columns={customer_columns}
+                                        onItemClick={handleMobileCustomerSelect}
+                                        selectedItems={selectedCustomers} // Pass selected customers
+                                    />
+                                ) : (
+                                    <DataTable
+                                        columns={customer_columns}
+                                        data={customerData}
+                                        onSelectionChange={handleCustomerSelectionChange}
+                                    />
+                                )}
+                            </div>
                         </CardContent>
                         <CardFooter className="px-4 sm:px-6">
                             <Button
