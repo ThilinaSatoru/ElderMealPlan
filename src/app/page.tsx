@@ -92,6 +92,60 @@ export async function getCustomers(): Promise<Customers[]> {
     ];
 }
 
+// Selection summary component
+const SelectionSummary = ({
+    selectedProducts,
+    selectedCustomers
+}: {
+    selectedProducts: Products[],
+    selectedCustomers: Customers[]
+}) => {
+    // Return early if no selections exist
+    if (selectedProducts.length === 0 && selectedCustomers.length === 0) {
+        return null;
+    }
+
+    return (
+        <Card className="shadow-md mb-6">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Selected Items</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="flex flex-col md:flex-row gap-4">
+                    {selectedProducts.length > 0 && (
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-sm mb-2">Products ({selectedProducts.length})</h3>
+                            <div className="max-h-32 overflow-y-auto">
+                                <ul className="text-sm">
+                                    {selectedProducts.map((product) => (
+                                        <li key={product.id} className="mb-1 pb-1 border-b border-gray-100">
+                                            <span className="font-medium">{product.comment_po_no}</span> - {product.item_description}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+
+                    {selectedCustomers.length > 0 && (
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-sm mb-2">Customers ({selectedCustomers.length})</h3>
+                            <div className="max-h-32 overflow-y-auto">
+                                <ul className="text-sm">
+                                    {selectedCustomers.map((customer) => (
+                                        <li key={customer.Cfin_Code} className="mb-1 pb-1 border-b border-gray-100">
+                                            <span className="font-medium">{customer.Cfin_Code}</span> - {customer.Name} ({customer.Division})
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
 
 export default function Home() {
     const [activeTab, setActiveTab] = useState("products");
@@ -110,8 +164,6 @@ export default function Home() {
         setSelectedProducts(selectedRows);
     }, []);
 
-
-
     const [customerData, setCustomerData] = useState<Customers[]>([]);
     const [selectedCustomers, setSelectedCustomers] = useState<Customers[]>([]);
     useEffect(() => {
@@ -126,6 +178,17 @@ export default function Home() {
         setSelectedCustomers(selectedRows);
     }, []);
 
+    // Function to handle form submission
+    const handleSubmit = () => {
+        // Here you would handle sending the data to your backend
+        console.log("Submitting order with:", {
+            products: selectedProducts,
+            customers: selectedCustomers
+        });
+
+        // Add your submission logic here
+        alert(`Order submitted with ${selectedProducts.length} products for ${selectedCustomers.length} customers`);
+    };
 
     return (
         <div>
@@ -148,8 +211,15 @@ export default function Home() {
                     <TabsTrigger value="customer">Customer</TabsTrigger>
                     <TabsTrigger value="submit">Submit</TabsTrigger>
                 </TabsList>
-                <TabsContent value="products" className="w-[1200px]">
-                    <Card className="w-[1200px]">
+
+                {/* Selection Summary displayed regardless of tab */}
+                <SelectionSummary
+                    selectedProducts={selectedProducts}
+                    selectedCustomers={selectedCustomers}
+                />
+
+                <TabsContent value="products" className="w-full max-w-[1200px]">
+                    <Card className="w-full">
                         <CardHeader>
                             <CardTitle>Product Selection</CardTitle>
                             <CardDescription>
@@ -165,17 +235,6 @@ export default function Home() {
                                             data={productData}
                                             onSelectionChange={handleProductSelectionChange}
                                         />
-
-                                        {selectedProducts.length > 0 && (
-                                            <div className="mt-6">
-                                                <h2 className="text-xl font-semibold mb-2">Selected Products:</h2>
-                                                <ul className="list-disc pl-6">
-                                                    {selectedProducts.map((product) => (
-                                                        <li key={product.id}>{product.comment_po_no} - {product.item_description}</li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -185,7 +244,7 @@ export default function Home() {
                         </CardFooter>
                     </Card>
                 </TabsContent>
-                <TabsContent value="customer" className="w-[1200px]">
+                <TabsContent value="customer" className="w-full max-w-[1200px]">
                     <Card>
                         <CardHeader>
                             <CardTitle>Customer Selection</CardTitle>
@@ -202,39 +261,124 @@ export default function Home() {
                                             data={customerData}
                                             onSelectionChange={handleCustomerSelectionChange}
                                         />
-                                        {selectedCustomers.length > 0 && (
-                                            <div className="mt-6">
-                                                <h2 className="text-xl font-semibold mb-2">Selected Customers:</h2>
-                                                <ul className="list-disc pl-6">
-                                                    {selectedCustomers.map((customer) => (
-                                                        <li key={customer.Cfin_Code}>
-                                                            {customer.Cfin_Code} - {customer.ASE_Name} ({customer.Division})
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
                         </CardContent>
                         <CardFooter>
-                            <Button onClick={() => setActiveTab("customer")} disabled={selectedCustomers.length === 0}>Proceed</Button>
+                            <Button onClick={() => setActiveTab("submit")} disabled={selectedCustomers.length === 0}>Proceed to Submit</Button>
                         </CardFooter>
                     </Card>
                 </TabsContent>
-                <TabsContent value="submit" className="w-[1200px]">
+                <TabsContent value="submit" className="w-full max-w-[1200px]">
                     <Card className="">
                         <CardHeader>
-                            <CardTitle>Product Selection</CardTitle>
+                            <CardTitle>Order Summary</CardTitle>
                             <CardDescription>
-                                Choose one or more products and proceed to the next step.
+                                Review your selections and submit your order
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <CardWithForm />
-                        </CardContent>
+                            <div className="space-y-8">
+                                {/* Order summary */}
+                                <Card className="bg-gray-50 dark:bg-gray-800">
+                                    <CardContent className="pt-6">
+                                        <h3 className="text-lg font-semibold mb-4">Order Details</h3>
 
+                                        <div className="space-y-6">
+                                            <div>
+                                                <h4 className="font-medium mb-2">Selected Products ({selectedProducts.length})</h4>
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>PO Number</TableHead>
+                                                            <TableHead>Brand</TableHead>
+                                                            <TableHead>Description</TableHead>
+                                                            <TableHead className="text-right">Value (Rs)</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {selectedProducts.map((product) => (
+                                                            <TableRow key={product.id}>
+                                                                <TableCell>{product.comment_po_no}</TableCell>
+                                                                <TableCell>{product.brand}</TableCell>
+                                                                <TableCell>{product.item_description}</TableCell>
+                                                                <TableCell className="text-right">{product.value_rs.toFixed(2)}</TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                        <TableRow>
+                                                            <TableCell colSpan={3} className="text-right font-bold">Total:</TableCell>
+                                                            <TableCell className="text-right font-bold">
+                                                                {selectedProducts.reduce((sum, product) => sum + product.value_rs, 0).toFixed(2)}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+
+                                            <div>
+                                                <h4 className="font-medium mb-2">Selected Customers ({selectedCustomers.length})</h4>
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>CFIN Code</TableHead>
+                                                            <TableHead>Name</TableHead>
+                                                            <TableHead>Division</TableHead>
+                                                            <TableHead>City</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {selectedCustomers.map((customer) => (
+                                                            <TableRow key={customer.Cfin_Code}>
+                                                                <TableCell>{customer.Cfin_Code}</TableCell>
+                                                                <TableCell>{customer.Name}</TableCell>
+                                                                <TableCell>{customer.Division}</TableCell>
+                                                                <TableCell>{customer.City}</TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-4">Additional Order Information</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="orderDate">Order Date</Label>
+                                            <Input type="date" id="orderDate" defaultValue={new Date().toISOString().split('T')[0]} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="requestedBy">Requested By</Label>
+                                            <Input type="text" id="requestedBy" placeholder="Your name" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="specialInstructions">Special Instructions</Label>
+                                            <Input type="text" id="specialInstructions" placeholder="Any special requirements" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="priority">Priority</Label>
+                                            <select id="priority" className="w-full p-2 border rounded">
+                                                <option value="normal">Normal</option>
+                                                <option value="high">High</option>
+                                                <option value="urgent">Urgent</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                        <CardFooter className="flex justify-between">
+                            <Button variant="outline" onClick={() => setActiveTab("customer")}>Back</Button>
+                            <Button
+                                onClick={handleSubmit}
+                                disabled={selectedProducts.length === 0 || selectedCustomers.length === 0}
+                            >
+                                Submit Order
+                            </Button>
+                        </CardFooter>
                     </Card>
                 </TabsContent>
             </Tabs>
