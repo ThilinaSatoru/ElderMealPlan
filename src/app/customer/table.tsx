@@ -26,7 +26,6 @@ export type Customer = {
     First_Name: string;
     ASE_Name: string;
 };
-
 const customers: Customer[] = [
     {
         Customer: 1001,
@@ -63,7 +62,7 @@ const customers: Customer[] = [
     },
 ];
 
-export default function CustomerPage() {
+export default function CustomerTable() {
     const [selectedCustomers, setSelectedCustomers] = useState<Customer[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const router = useRouter();
@@ -112,14 +111,14 @@ export default function CustomerPage() {
             <h1 className="text-3xl font-bold mb-4">Customer Selection</h1>
             <p className="text-gray-600 mb-6">Select one or more customers to proceed with the order.</p>
 
-            <div className="mb-6">
-                <Input
-                    placeholder="Search by name, city, or ASE name..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-md"
-                />
-            </div>
+            {/*<div className="mb-6">*/}
+            {/*    <Input*/}
+            {/*        placeholder="Search by name, city, or ASE name..."*/}
+            {/*        value={searchTerm}*/}
+            {/*        onChange={(e) => setSearchTerm(e.target.value)}*/}
+            {/*        className="max-w-md"*/}
+            {/*    />*/}
+            {/*</div>*/}
 
             <Card className="shadow-lg rounded-2xl">
                 <CardContent className="p-6">

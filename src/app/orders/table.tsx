@@ -29,7 +29,6 @@ export type OrderForm = {
     value_rs: number;
     strategic_group: string;
 };
-
 const products: OrderForm[] = [
     {
         id: "1",
@@ -103,20 +102,19 @@ export default function ProductTable() {
 
     return (
         <div className="container mx-auto p-6">
-            <Breadcrumb>
-                <BreadcrumbList>
-                    <BreadcrumbItem>
-                        <BreadcrumbLink href="/">Home</BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator/>
-                    <BreadcrumbItem>
-                        <BreadcrumbPage>Products</BreadcrumbPage>
-                    </BreadcrumbItem>
-                </BreadcrumbList>
-            </Breadcrumb>
+            {/*<Breadcrumb>*/}
+            {/*    <BreadcrumbList>*/}
+            {/*        <BreadcrumbItem>*/}
+            {/*            <BreadcrumbLink href="/">Home</BreadcrumbLink>*/}
+            {/*        </BreadcrumbItem>*/}
+            {/*        <BreadcrumbSeparator/>*/}
+            {/*        <BreadcrumbItem>*/}
+            {/*            <BreadcrumbPage>Products</BreadcrumbPage>*/}
+            {/*        </BreadcrumbItem>*/}
+            {/*    </BreadcrumbList>*/}
+            {/*</Breadcrumb>*/}
 
-            <h1 className="text-3xl font-bold mb-4">Product Selection</h1>
-            <p className="text-gray-600 mb-6">Choose one or more products and proceed to the next step.</p>
+
             <Card className="shadow-lg rounded-2xl">
                 <CardContent className="p-6">
                     <Table>
