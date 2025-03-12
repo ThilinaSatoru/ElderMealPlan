@@ -141,21 +141,48 @@ const SelectionSummary = ({
 };
 
 // Mobile-friendly table component
+// MobileTable component with pagination and selection highlighting
 const MobileTable = ({
     data,
     columns,
-    onItemClick
+    onItemClick,
+    selectedItems = [] // Add this to track selected items
 }: {
     data: any[],
     columns: any[],
-    onItemClick?: (item: any) => void
+    onItemClick?: (item: any) => void,
+    selectedItems?: any[] // Array of selected items
 }) => {
+    const [page, setPage] = useState(0);
+    const itemsPerPage = 5;
+    const totalPages = Math.ceil(data.length / itemsPerPage);
+
+    // Get current page items
+    const currentItems = data.slice(
+        page * itemsPerPage,
+        (page + 1) * itemsPerPage
+    );
+
+    // Check if an item is selected
+    const isItemSelected = (item: any) => {
+        // For products
+        if (item.id) {
+            return selectedItems.some(selected => selected.id === item.id);
+        }
+        // For customers
+        if (item.Cfin_Code) {
+            return selectedItems.some(selected => selected.Cfin_Code === item.Cfin_Code);
+        }
+        return false;
+    };
+
     return (
         <div className="space-y-4">
-            {data.map((item, index) => (
+            {currentItems.map((item, index) => (
                 <Card
                     key={index}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                    className={`hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer ${isItemSelected(item) ? 'border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''
+                        }`}
                     onClick={() => onItemClick && onItemClick(item)}
                 >
                     <CardContent className="p-4">
@@ -176,6 +203,33 @@ const MobileTable = ({
                     </CardContent>
                 </Card>
             ))}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="flex justify-between items-center pt-4">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(prev => Math.max(0, prev - 1))}
+                        disabled={page === 0}
+                    >
+                        Previous
+                    </Button>
+
+                    <span className="text-sm">
+                        Page {page + 1} of {totalPages}
+                    </span>
+
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(prev => Math.min(totalPages - 1, prev + 1))}
+                        disabled={page === totalPages - 1}
+                    >
+                        Next
+                    </Button>
+                </div>
+            )}
         </div>
     );
 };
@@ -309,6 +363,7 @@ export default function Home() {
                                                 data={productData}
                                                 columns={product_columns}
                                                 onItemClick={handleMobileProductSelect}
+                                                selectedItems={selectedProducts} // Pass selected products
                                             />
                                         ) : (
                                             <DataTable
@@ -350,6 +405,7 @@ export default function Home() {
                                                 data={customerData}
                                                 columns={customer_columns}
                                                 onItemClick={handleMobileCustomerSelect}
+                                                selectedItems={selectedCustomers} // Pass selected customers
                                             />
                                         ) : (
                                             <DataTable
