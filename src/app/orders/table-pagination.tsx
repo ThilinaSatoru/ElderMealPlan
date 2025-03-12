@@ -1,4 +1,5 @@
 import { Table } from "@tanstack/react-table"
+import { useEffect } from "react"
 import {
     ChevronLeft,
     ChevronRight,
@@ -17,11 +18,23 @@ import {
 
 interface DataTablePaginationProps<TData> {
     table: Table<TData>
+    onLastPage?: () => void
 }
 
 export function DataTablePagination<TData>({
     table,
+    onLastPage,
 }: DataTablePaginationProps<TData>) {
+    const currentPageIndex = table.getState().pagination.pageIndex
+    const lastPageIndex = table.getPageCount() - 1
+
+    // Check if current page meets last page and trigger the event
+    useEffect(() => {
+        if (currentPageIndex === lastPageIndex && lastPageIndex >= 0 && onLastPage) {
+            onLastPage()
+        }
+    }, [currentPageIndex, lastPageIndex, onLastPage])
+
     return (
         <div className="flex items-center justify-between px-2">
             <div className="flex-1 text-sm text-muted-foreground">
@@ -50,7 +63,7 @@ export function DataTablePagination<TData>({
                     </Select>
                 </div>
                 <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-                    Page {table.getState().pagination.pageIndex + 1} of{" "}
+                    Page {currentPageIndex + 1} of{" "}
                     {table.getPageCount()}
                 </div>
                 <div className="flex items-center space-x-2">

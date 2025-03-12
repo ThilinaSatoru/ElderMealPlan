@@ -237,23 +237,25 @@ const MobileTable = ({
 export default function Home() {
     const [activeTab, setActiveTab] = useState("products");
     const [isMobile, setIsMobile] = useState(false);
+    const [productData, setData] = useState<Products[]>([]);
+    const [selectedProducts, setSelectedProducts] = useState<Products[]>([]);
+    const [customerData, setCustomerData] = useState<Customers[]>([]);
+    const [selectedCustomers, setSelectedCustomers] = useState<Customers[]>([]);
+    const [isProductLastPage, setIsProductLastPage] = useState(false);
 
     // Check if we're on mobile
     useEffect(() => {
         const checkIsMobile = () => {
             setIsMobile(window.innerWidth < 768);
         };
-
         checkIsMobile();
         window.addEventListener('resize', checkIsMobile);
-
         return () => {
             window.removeEventListener('resize', checkIsMobile);
         };
     }, []);
 
-    const [productData, setData] = useState<Products[]>([]);
-    const [selectedProducts, setSelectedProducts] = useState<Products[]>([]);
+
     useEffect(() => {
         async function fetchData() {
             const result = await getProducts();
@@ -280,8 +282,7 @@ export default function Home() {
         });
     };
 
-    const [customerData, setCustomerData] = useState<Customers[]>([]);
-    const [selectedCustomers, setSelectedCustomers] = useState<Customers[]>([]);
+
     useEffect(() => {
         async function fetchData() {
             const result = await getCustomers();
@@ -340,11 +341,18 @@ export default function Home() {
                     <TabsTrigger value="submit">Submit</TabsTrigger>
                 </TabsList>
 
+
                 {/* Selection Summary displayed regardless of tab */}
-                <SelectionSummary
-                    selectedProducts={selectedProducts}
-                    selectedCustomers={selectedCustomers}
-                />
+                {activeTab != "submit" ?
+                    <>
+                        <SelectionSummary
+                            selectedProducts={selectedProducts}
+                            selectedCustomers={selectedCustomers}
+                        />
+                    </>
+                    : <></>
+                }
+
 
                 <TabsContent value="products" className="w-full">
                     <Card className="w-full">
@@ -368,6 +376,10 @@ export default function Home() {
                                         columns={product_columns}
                                         data={productData}
                                         onSelectionChange={handleProductSelectionChange}
+                                        onLastPageReached={() => {
+                                            setIsProductLastPage(true)
+                                            console.log("Reached last page", isProductLastPage)
+                                        }}
                                     />
                                 )}
                             </div>
@@ -375,7 +387,7 @@ export default function Home() {
                         <CardFooter className="px-4 sm:px-6">
                             <Button
                                 onClick={() => setActiveTab("customer")}
-                                disabled={selectedProducts.length === 0}
+                                disabled={selectedProducts.length === 0 || isProductLastPage === false}
                                 className="w-full sm:w-auto"
                             >
                                 Next Page

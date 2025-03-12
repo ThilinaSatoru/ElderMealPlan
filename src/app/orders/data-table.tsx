@@ -26,12 +26,14 @@ interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
     onSelectionChange?: (selectedRows: TData[]) => void
+    onLastPageReached?: () => void
 }
 
 export function DataTable<TData, TValue>({
     columns,
     data,
     onSelectionChange,
+    onLastPageReached,
 }: DataTableProps<TData, TValue>) {
     const table = useReactTable({
         data,
@@ -47,6 +49,17 @@ export function DataTable<TData, TValue>({
             onSelectionChange(selectedRows)
         }
     }, [table.getState().rowSelection, onSelectionChange, table])
+
+    // Check if current page is the last page
+    const currentPageIndex = table.getState().pagination.pageIndex
+    const lastPageIndex = table.getPageCount() - 1
+
+    // Update parent component when last page status changes
+    useEffect(() => {
+        if (currentPageIndex === lastPageIndex && lastPageIndex >= 0 && onLastPageReached) {
+            onLastPageReached()
+        }
+    }, [currentPageIndex, lastPageIndex, onLastPageReached])
 
     return (
         <div>
@@ -96,7 +109,13 @@ export function DataTable<TData, TValue>({
             </div>
 
             <div className="flex items-center justify-end space-x-2 py-4">
-                <DataTablePagination table={table} />
+                <DataTablePagination
+                    table={table}
+                    onLastPage={() => {
+                        // Only needed if you want additional handling in the pagination component
+                        // console.log("Reached last page in pagination component")
+                    }}
+                />
             </div>
         </div>
     )
