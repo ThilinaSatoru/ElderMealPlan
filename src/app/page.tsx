@@ -1,6 +1,5 @@
 "use client"
 import Image from "next/image";
-import FooterMain from "./footer"
 import { Button } from "@/components/ui/button"
 import {
     Card,
@@ -18,17 +17,11 @@ import {
     TabsList,
     TabsTrigger,
 } from "@/components/ui/tabs"
-import CustomerTable from "@/app/customer/table";
-import * as React from "react";
-import ProductTable from "@/app/orders/table";
 import { useState, useEffect, useCallback } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
-import { CardWithForm } from "./card-button";
 import { DataTable } from "./orders/data-table";
 import { Products, product_columns } from "./orders/columns";
 import { Customers, customer_columns } from "./customer/columns"
-
 
 async function getProducts(): Promise<Products[]> {
     return [
@@ -147,8 +140,63 @@ const SelectionSummary = ({
     );
 };
 
+// Mobile-friendly table component
+const MobileTable = ({
+    data,
+    columns,
+    onItemClick
+}: {
+    data: any[],
+    columns: any[],
+    onItemClick?: (item: any) => void
+}) => {
+    return (
+        <div className="space-y-4">
+            {data.map((item, index) => (
+                <Card
+                    key={index}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                    onClick={() => onItemClick && onItemClick(item)}
+                >
+                    <CardContent className="p-4">
+                        {columns.slice(0, 4).map((column, i) => {
+                            // Skip the selection column
+                            if (column.id === "select") return null;
+
+                            const value = column.accessorKey ? item[column.accessorKey] :
+                                column.accessorFn ? column.accessorFn(item) : '';
+
+                            return (
+                                <div key={i} className="flex justify-between py-1">
+                                    <span className="font-medium text-sm">{column.header}</span>
+                                    <span className="text-sm">{value}</span>
+                                </div>
+                            );
+                        })}
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    );
+};
+
 export default function Home() {
     const [activeTab, setActiveTab] = useState("products");
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Check if we're on mobile
+    useEffect(() => {
+        const checkIsMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+
+        checkIsMobile();
+        window.addEventListener('resize', checkIsMobile);
+
+        return () => {
+            window.removeEventListener('resize', checkIsMobile);
+        };
+    }, []);
 
     const [productData, setData] = useState<Products[]>([]);
     const [selectedProducts, setSelectedProducts] = useState<Products[]>([]);
@@ -159,10 +207,24 @@ export default function Home() {
         }
         fetchData();
     }, []);
-    // Handle selection changes Memoized function to prevent re-renders
+
+    // Handle selection changes - Memoized function to prevent re-renders
     const handleProductSelectionChange = useCallback((selectedRows: Products[]) => {
         setSelectedProducts(selectedRows);
     }, []);
+
+    // Handle mobile product selection
+    const handleMobileProductSelect = (product: Products) => {
+        setSelectedProducts(prev => {
+            // If already selected, remove it
+            const isAlreadySelected = prev.some(p => p.id === product.id);
+            if (isAlreadySelected) {
+                return prev.filter(p => p.id !== product.id);
+            }
+            // Otherwise add it
+            return [...prev, product];
+        });
+    };
 
     const [customerData, setCustomerData] = useState<Customers[]>([]);
     const [selectedCustomers, setSelectedCustomers] = useState<Customers[]>([]);
@@ -173,10 +235,24 @@ export default function Home() {
         }
         fetchData();
     }, []);
+
     // Handle selection changes
     const handleCustomerSelectionChange = useCallback((selectedRows: Customers[]) => {
         setSelectedCustomers(selectedRows);
     }, []);
+
+    // Handle mobile customer selection
+    const handleMobileCustomerSelect = (customer: Customers) => {
+        setSelectedCustomers(prev => {
+            // If already selected, remove it
+            const isAlreadySelected = prev.some(c => c.Cfin_Code === customer.Cfin_Code);
+            if (isAlreadySelected) {
+                return prev.filter(c => c.Cfin_Code !== customer.Cfin_Code);
+            }
+            // Otherwise add it
+            return [...prev, customer];
+        });
+    };
 
     // Function to handle form submission
     const handleSubmit = () => {
@@ -191,22 +267,20 @@ export default function Home() {
     };
 
     return (
-        <div>
-            <Image
-                className="dark:invert"
-                src="/next.svg"
-                alt="Next.js logo"
-                width={180}
-                height={38}
-                priority
-            />
-            <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-            </ol>
-            <div className="flex gap-4 items-center flex-col sm:flex-row mb-10">
+        <div className="container mx-auto px-4">
+            <div className="py-4 flex justify-center md:justify-start">
+                <Image
+                    className="dark:invert"
+                    src="/next.svg"
+                    alt="Next.js logo"
+                    width={180}
+                    height={38}
+                    priority
+                />
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-[500px] grid-cols-3">
+                <TabsList className="grid w-full md:w-[500px] grid-cols-3 mb-4">
                     <TabsTrigger value="products">Products</TabsTrigger>
                     <TabsTrigger value="customer">Customer</TabsTrigger>
                     <TabsTrigger value="submit">Submit</TabsTrigger>
@@ -218,7 +292,7 @@ export default function Home() {
                     selectedCustomers={selectedCustomers}
                 />
 
-                <TabsContent value="products" className="w-full max-w-[1200px]">
+                <TabsContent value="products" className="w-full">
                     <Card className="w-full">
                         <CardHeader>
                             <CardTitle>Product Selection</CardTitle>
@@ -226,25 +300,40 @@ export default function Home() {
                                 Choose one or more products and proceed to the next step.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-2">
+                        <CardContent className="space-y-2 px-2 sm:px-6">
                             <Card className="shadow-lg rounded-2xl">
-                                <CardContent className="p-6">
-                                    <div className="container mx-auto py-10">
-                                        <DataTable
-                                            columns={product_columns}
-                                            data={productData}
-                                            onSelectionChange={handleProductSelectionChange}
-                                        />
+                                <CardContent className="p-2 sm:p-6">
+                                    <div className="py-4">
+                                        {isMobile ? (
+                                            <MobileTable
+                                                data={productData}
+                                                columns={product_columns}
+                                                onItemClick={handleMobileProductSelect}
+                                            />
+                                        ) : (
+                                            <DataTable
+                                                columns={product_columns}
+                                                data={productData}
+                                                onSelectionChange={handleProductSelectionChange}
+                                            />
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
                         </CardContent>
-                        <CardFooter>
-                            <Button onClick={() => setActiveTab("customer")} disabled={selectedProducts.length === 0}>Next Page</Button>
+                        <CardFooter className="px-4 sm:px-6">
+                            <Button
+                                onClick={() => setActiveTab("customer")}
+                                disabled={selectedProducts.length === 0}
+                                className="w-full sm:w-auto"
+                            >
+                                Next Page
+                            </Button>
                         </CardFooter>
                     </Card>
                 </TabsContent>
-                <TabsContent value="customer" className="w-full max-w-[1200px]">
+
+                <TabsContent value="customer" className="w-full">
                     <Card>
                         <CardHeader>
                             <CardTitle>Customer Selection</CardTitle>
@@ -252,92 +341,163 @@ export default function Home() {
                                 Select one or more customers to proceed with the order.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-2">
+                        <CardContent className="space-y-2 px-2 sm:px-6">
                             <Card className="shadow-lg rounded-2xl">
-                                <CardContent className="p-6">
-                                    <div className="container mx-auto py-10">
-                                        <DataTable
-                                            columns={customer_columns}
-                                            data={customerData}
-                                            onSelectionChange={handleCustomerSelectionChange}
-                                        />
+                                <CardContent className="p-2 sm:p-6">
+                                    <div className="py-4">
+                                        {isMobile ? (
+                                            <MobileTable
+                                                data={customerData}
+                                                columns={customer_columns}
+                                                onItemClick={handleMobileCustomerSelect}
+                                            />
+                                        ) : (
+                                            <DataTable
+                                                columns={customer_columns}
+                                                data={customerData}
+                                                onSelectionChange={handleCustomerSelectionChange}
+                                            />
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
                         </CardContent>
-                        <CardFooter>
-                            <Button onClick={() => setActiveTab("submit")} disabled={selectedCustomers.length === 0}>Proceed to Submit</Button>
+                        <CardFooter className="px-4 sm:px-6">
+                            <Button
+                                onClick={() => setActiveTab("submit")}
+                                disabled={selectedCustomers.length === 0}
+                                className="w-full sm:w-auto"
+                            >
+                                Proceed to Submit
+                            </Button>
                         </CardFooter>
                     </Card>
                 </TabsContent>
-                <TabsContent value="submit" className="w-full max-w-[1200px]">
-                    <Card className="">
+
+                <TabsContent value="submit" className="w-full">
+                    <Card>
                         <CardHeader>
                             <CardTitle>Order Summary</CardTitle>
                             <CardDescription>
                                 Review your selections and submit your order
                             </CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="px-2 sm:px-6">
                             <div className="space-y-8">
                                 {/* Order summary */}
                                 <Card className="bg-gray-50 dark:bg-gray-800">
-                                    <CardContent className="pt-6">
+                                    <CardContent className="pt-6 px-2 sm:px-6">
                                         <h3 className="text-lg font-semibold mb-4">Order Details</h3>
 
                                         <div className="space-y-6">
                                             <div>
                                                 <h4 className="font-medium mb-2">Selected Products ({selectedProducts.length})</h4>
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead>PO Number</TableHead>
-                                                            <TableHead>Brand</TableHead>
-                                                            <TableHead>Description</TableHead>
-                                                            <TableHead className="text-right">Value (Rs)</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {selectedProducts.map((product) => (
-                                                            <TableRow key={product.id}>
-                                                                <TableCell>{product.comment_po_no}</TableCell>
-                                                                <TableCell>{product.brand}</TableCell>
-                                                                <TableCell>{product.item_description}</TableCell>
-                                                                <TableCell className="text-right">{product.value_rs.toFixed(2)}</TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                        <TableRow>
-                                                            <TableCell colSpan={3} className="text-right font-bold">Total:</TableCell>
-                                                            <TableCell className="text-right font-bold">
-                                                                {selectedProducts.reduce((sum, product) => sum + product.value_rs, 0).toFixed(2)}
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    </TableBody>
-                                                </Table>
+                                                <div className="overflow-x-auto">
+                                                    {isMobile ? (
+                                                        <div className="space-y-4">
+                                                            {selectedProducts.map((product) => (
+                                                                <Card key={product.id} className="p-3">
+                                                                    <div className="grid grid-cols-2 gap-2">
+                                                                        <div className="font-medium">PO Number:</div>
+                                                                        <div>{product.comment_po_no}</div>
+
+                                                                        <div className="font-medium">Brand:</div>
+                                                                        <div>{product.brand}</div>
+
+                                                                        <div className="font-medium">Description:</div>
+                                                                        <div>{product.item_description}</div>
+
+                                                                        <div className="font-medium">Value (Rs):</div>
+                                                                        <div>{product.value_rs.toFixed(2)}</div>
+                                                                    </div>
+                                                                </Card>
+                                                            ))}
+                                                            <Card className="p-3 bg-gray-100 dark:bg-gray-700">
+                                                                <div className="grid grid-cols-2 gap-2">
+                                                                    <div className="font-bold">Total:</div>
+                                                                    <div className="font-bold">
+                                                                        {selectedProducts.reduce((sum, product) => sum + product.value_rs, 0).toFixed(2)}
+                                                                    </div>
+                                                                </div>
+                                                            </Card>
+                                                        </div>
+                                                    ) : (
+                                                        <Table>
+                                                            <TableHeader>
+                                                                <TableRow>
+                                                                    <TableHead>PO Number</TableHead>
+                                                                    <TableHead>Brand</TableHead>
+                                                                    <TableHead>Description</TableHead>
+                                                                    <TableHead className="text-right">Value (Rs)</TableHead>
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {selectedProducts.map((product) => (
+                                                                    <TableRow key={product.id}>
+                                                                        <TableCell>{product.comment_po_no}</TableCell>
+                                                                        <TableCell>{product.brand}</TableCell>
+                                                                        <TableCell>{product.item_description}</TableCell>
+                                                                        <TableCell className="text-right">{product.value_rs.toFixed(2)}</TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                                <TableRow>
+                                                                    <TableCell colSpan={3} className="text-right font-bold">Total:</TableCell>
+                                                                    <TableCell className="text-right font-bold">
+                                                                        {selectedProducts.reduce((sum, product) => sum + product.value_rs, 0).toFixed(2)}
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            </TableBody>
+                                                        </Table>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             <div>
                                                 <h4 className="font-medium mb-2">Selected Customers ({selectedCustomers.length})</h4>
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead>CFIN Code</TableHead>
-                                                            <TableHead>Name</TableHead>
-                                                            <TableHead>Division</TableHead>
-                                                            <TableHead>City</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {selectedCustomers.map((customer) => (
-                                                            <TableRow key={customer.Cfin_Code}>
-                                                                <TableCell>{customer.Cfin_Code}</TableCell>
-                                                                <TableCell>{customer.Name}</TableCell>
-                                                                <TableCell>{customer.Division}</TableCell>
-                                                                <TableCell>{customer.City}</TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
+                                                <div className="overflow-x-auto">
+                                                    {isMobile ? (
+                                                        <div className="space-y-4">
+                                                            {selectedCustomers.map((customer) => (
+                                                                <Card key={customer.Cfin_Code} className="p-3">
+                                                                    <div className="grid grid-cols-2 gap-2">
+                                                                        <div className="font-medium">CFIN Code:</div>
+                                                                        <div>{customer.Cfin_Code}</div>
+
+                                                                        <div className="font-medium">Name:</div>
+                                                                        <div>{customer.Name}</div>
+
+                                                                        <div className="font-medium">Division:</div>
+                                                                        <div>{customer.Division}</div>
+
+                                                                        <div className="font-medium">City:</div>
+                                                                        <div>{customer.City}</div>
+                                                                    </div>
+                                                                </Card>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <Table>
+                                                            <TableHeader>
+                                                                <TableRow>
+                                                                    <TableHead>CFIN Code</TableHead>
+                                                                    <TableHead>Name</TableHead>
+                                                                    <TableHead>Division</TableHead>
+                                                                    <TableHead>City</TableHead>
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {selectedCustomers.map((customer) => (
+                                                                    <TableRow key={customer.Cfin_Code}>
+                                                                        <TableCell>{customer.Cfin_Code}</TableCell>
+                                                                        <TableCell>{customer.Name}</TableCell>
+                                                                        <TableCell>{customer.Division}</TableCell>
+                                                                        <TableCell>{customer.City}</TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                            </TableBody>
+                                                        </Table>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </CardContent>
@@ -360,7 +520,7 @@ export default function Home() {
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="priority">Priority</Label>
-                                            <select id="priority" className="w-full p-2 border rounded">
+                                            <select id="priority" className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-400">
                                                 <option value="normal">Normal</option>
                                                 <option value="high">High</option>
                                                 <option value="urgent">Urgent</option>
@@ -370,11 +530,18 @@ export default function Home() {
                                 </div>
                             </div>
                         </CardContent>
-                        <CardFooter className="flex justify-between">
-                            <Button variant="outline" onClick={() => setActiveTab("customer")}>Back</Button>
+                        <CardFooter className="flex flex-col sm:flex-row justify-between gap-4 px-4 sm:px-6">
+                            <Button
+                                variant="outline"
+                                onClick={() => setActiveTab("customer")}
+                                className="w-full sm:w-auto"
+                            >
+                                Back
+                            </Button>
                             <Button
                                 onClick={handleSubmit}
                                 disabled={selectedProducts.length === 0 || selectedCustomers.length === 0}
+                                className="w-full sm:w-auto"
                             >
                                 Submit Order
                             </Button>
