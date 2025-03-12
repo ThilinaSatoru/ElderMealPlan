@@ -1,7 +1,7 @@
-import { OrderForm, columns } from "./columns"
+import { Products, product_columns } from "./columns"
 import { DataTable } from "./data-table"
 
-async function getData(): Promise<OrderForm[]> {
+async function getData(): Promise<Products[]> {
     return [
         {
             id: "1",
@@ -41,7 +41,7 @@ export default async function DemoPage() {
 
     return (
         <div className="container mx-auto py-10">
-            <DataTable columns={columns} data={data} />
+            <DataTable columns={product_columns} data={data} />
         </div>
     )
 }
