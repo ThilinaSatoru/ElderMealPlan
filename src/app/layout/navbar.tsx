@@ -9,7 +9,7 @@ export default function Navbar() {
             <div className="hidden md:flex space-x-6">
                 <a href="/" className="hover:text-primary">Home</a>
                 <a href="/profiles" className="hover:text-primary">Patients</a>
-                <a href="#" className="hover:text-primary">Pricing</a>
+                <a href="/model" className="hover:text-primary"> MealPlan</a>
                 <a href="#" className="hover:text-primary">About</a>
             </div>
             <div className="flex items-center space-x-4">

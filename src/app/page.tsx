@@ -7,7 +7,7 @@ import LandingPage from './landing-page';
 // Main component with animation effects
 const HomePage = () => {
     return (
-        <div className="">
+        <div>
             <LandingPage />
         </div>
     );
