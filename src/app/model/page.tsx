@@ -25,7 +25,6 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
     Card,
     CardContent,
@@ -34,300 +33,174 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import {
-    Table,
-    TableBody,
-    TableCaption,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { HealthProfile } from "../profiles/columns";
 
-// Type definition for meal recommendation
-type MealRecommendation = {
-    mealId: string;
-    mealDetails: string;
-    mealType: string;
-    glycemicIndex: number;
-    calories: number;
-    carbohydrates: number;
-    protein: number;
-    fats: number;
-    fiber: number;
-    culturalSuitability: string;
-    allergenInformation: string;
-    cookingMethod: string;
-    dietaryPreference: string;
+type Meal = {
+    AllergyStatus: string;
+    Calories: number;
+    "Carbs(g)": number;
+    "Fiber(g)": number;
+    GlycemicLoad: string;
+    MealDetails: string;
+    MealID: number;
+    MealName: string;
+    Preferences: string;
+    "Protein(g)": number;
+    Type: string;
+};
+
+type Nutrition = {
+    "Fat(g)": number;
+    "NetCarbs(g)": number;
+    "Protein(g)": number;
+    TotalCalories: number;
+};
+
+type UserProfileMatch = {
+    AllergiesAvoided: string[];
+    DietaryPreference: string;
+    GlycemicLoad: string;
+    SpecialConditions: string;
+    TriggerFoodsAvoided: string[];
+};
+
+type MealPlan = {
+    MealPlanID: number;
+    Meals: Meal[];
+    Nutrition: Nutrition;
+    PlanName: string;
+    SpecialRecommendations: string[];
+    UserProfileMatch: UserProfileMatch;
 };
 
 // Form schema validation
 const formSchema = z.object({
-    userId: z.string().min(1, "User ID is required"),
-    ageGroup: z.string().min(1, "Age group is required"),
-    gender: z.string().min(1, "Gender is required"),
-    weightRange: z.string().min(1, "Weight range is required"),
-    heightRange: z.string().min(1, "Height range is required"),
-    bmiCategory: z.string().min(1, "BMI category is required"),
-    location: z.string().min(1, "Location is required"),
-    diabetesDuration: z.string().min(1, "Diabetes duration is required"),
-    medicationDuration: z.string().min(1, "Medication duration is required"),
-    chronicDiseases: z.array(z.string()),
-    fastingBloodSugar: z.string().min(1, "Fasting blood sugar is required"),
-    postprandialBloodSugar: z.string().min(1, "Postprandial blood sugar is required"),
-    hba1cLevel: z.string().min(1, "HbA1c level is required"),
-    dietaryPreferences: z.string().min(1, "Dietary preferences is required"),
-    allergies: z.array(z.string()),
-    avoidanceFoods: z.array(z.string()),
-    cookingMethods: z.array(z.string()),
+    Age: z.number().min(1, "Age is required").max(120, "Age must be realistic"),
+    Gender: z.enum(["Male", "Female"]),
+    Weight: z.number().min(20, "Weight must be realistic").max(300, "Weight must be realistic"),
+    Height: z.number().min(100, "Height must be realistic").max(250, "Height must be realistic"),
+    Allergies: z.enum(["None", "Coconut sambol", "Pickled vegetables", "Kiribath"]),
+    DietFollowed: z.enum(["Vegetarian", "Vegan", "Pescetarian", "Non-vegetarian"]),
+    FastingGlucose: z.number().min(50, "Glucose level must be realistic").max(500, "Glucose level must be realistic"),
+    OtherConditions: z.enum(["None", "Diabetes", "Prediabetes", "High cholesterol", "Hypertension"]),
+    TriggerFoods: z.enum(["None", "Sugary snacks", "White bread", "Nuts", "Dairy"]),
 });
 
-// Sample chronic diseases options
-const chronicDiseaseOptions = [
-    { id: "hypertension", label: "Hypertension" },
-    { id: "heartDisease", label: "Heart Disease" },
-    { id: "kidneyDisease", label: "Kidney Disease" },
-    { id: "thyroidDisorder", label: "Thyroid Disorder" },
-];
-
-// Sample allergy options
-const allergyOptions = [
-    { id: "nuts", label: "Nuts" },
-    { id: "dairy", label: "Dairy" },
-    { id: "gluten", label: "Gluten" },
-    { id: "shellfish", label: "Shellfish" },
-    { id: "eggs", label: "Eggs" },
-];
-
-// Sample foods to avoid options
-const avoidanceFoodOptions = [
-    { id: "redMeat", label: "Red Meat" },
-    { id: "processedFood", label: "Processed Food" },
-    { id: "refinedSugar", label: "Refined Sugar" },
-    { id: "friedFood", label: "Fried Food" },
-];
-
-// Sample cooking method options
-const cookingMethodOptions = [
-    { id: "boiling", label: "Boiling" },
-    { id: "steaming", label: "Steaming" },
-    { id: "baking", label: "Baking" },
-    { id: "grilling", label: "Grilling" },
-];
-
 export default function HealthProfilePage() {
-    const [mealRecommendations, setMealRecommendations] = useState<MealRecommendation[]>([]);
+    const [mealRecommendations, setMealRecommendations] = useState<MealPlan[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            userId: "",
-            ageGroup: "",
-            gender: "",
-            weightRange: "",
-            heightRange: "",
-            bmiCategory: "",
-            location: "",
-            diabetesDuration: "",
-            medicationDuration: "",
-            chronicDiseases: [],
-            fastingBloodSugar: "",
-            postprandialBloodSugar: "",
-            hba1cLevel: "",
-            dietaryPreferences: "",
-            allergies: [],
-            avoidanceFoods: [],
-            cookingMethods: [],
+            Age: 0,
+            Gender: "Female",
+            Weight: 0,
+            Height: 0,
+            Allergies: "None",
+            DietFollowed: "Vegetarian",
+            FastingGlucose: 0,
+            OtherConditions: "None",
+            TriggerFoods: "None",
         },
     });
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true);
 
-        // Create a health profile from form values
-        const healthProfile: HealthProfile = {
+        const healthProfile = {
             id: uuidv4(),
             ...values,
         };
 
-        // Simulate API call with a timeout
         setTimeout(() => {
-            // Mock meal recommendations based on health profile
             const recommendations = generateMealRecommendations(healthProfile);
-            setMealRecommendations(recommendations);
+            setMealRecommendations([recommendations]);
             setIsLoading(false);
         }, 1500);
     }
 
     // Mock function to generate meal recommendations based on health profile
-    function generateMealRecommendations(profile: HealthProfile): MealRecommendation[] {
-        // In a real application, this would call an API or use a more sophisticated algorithm
-        // For this example, we'll return mock data
-
-        // Sample meals for different dietary preferences
-        const mealsByPreference: Record<string, MealRecommendation[]> = {
-            "vegetarian": [
+    function generateMealRecommendations(profile: z.infer<typeof formSchema>): MealPlan {
+        const mealPlan = {
+            MealPlanID: Math.floor(Math.random() * 100) + 1,
+            Meals: [
                 {
-                    mealId: "M002",
-                    mealDetails: "Red Raw Rice (1 cup), Dhal Curry (2 tbsp), Spinach Curry (2 tbsp), Tofu Stir Fry (1/2 cup), Orange (1 medium)",
-                    mealType: "Lunch",
-                    glycemicIndex: 45,
-                    calories: 320,
-                    carbohydrates: 48,
-                    protein: 15,
-                    fats: 6,
-                    fiber: 8,
-                    culturalSuitability: "Yes",
-                    allergenInformation: "Soy",
-                    cookingMethod: "Boiling, Stir Frying",
-                    dietaryPreference: "Vegetarian",
+                    AllergyStatus: profile.Allergies === "None" ? "None" : `Contains ${profile.Allergies.toLowerCase()}`,
+                    Calories: 320,
+                    "Carbs(g)": 38,
+                    "Fiber(g)": 6,
+                    GlycemicLoad: "Medium",
+                    MealDetails: "Kiribath with sardine sambol",
+                    MealID: 1,
+                    MealName: "Mediterranean (1800 cal)",
+                    Preferences: profile.DietFollowed,
+                    "Protein(g)": 15,
+                    Type: "Breakfast"
                 },
+                {
+                    AllergyStatus: profile.Allergies === "None" ? "None" : `Contains ${profile.Allergies.toLowerCase()}`,
+                    Calories: 480,
+                    "Carbs(g)": 45,
+                    "Fiber(g)": 12,
+                    GlycemicLoad: "Low",
+                    MealDetails: "Red rice, grilled seer fish, steamed greens",
+                    MealID: 2,
+                    MealName: "Mediterranean (1800 cal)",
+                    Preferences: profile.DietFollowed,
+                    "Protein(g)": 35,
+                    Type: "Lunch"
+                },
+                {
+                    AllergyStatus: profile.Allergies === "None" ? "None" : `Contains ${profile.Allergies.toLowerCase()}`,
+                    Calories: 350,
+                    "Carbs(g)": 25,
+                    "Fiber(g)": 8,
+                    GlycemicLoad: "Low",
+                    MealDetails: "Tuna salad with olive oil, kurakkan roti",
+                    MealID: 3,
+                    MealName: "Mediterranean (1800 cal)",
+                    Preferences: profile.DietFollowed,
+                    "Protein(g)": 28,
+                    Type: "Dinner"
+                }
             ],
-            "vegan": [
-                {
-                    mealId: "M003",
-                    mealDetails: "Brown Rice (1 cup), Chickpea Curry (1/2 cup), Pumpkin Curry (2 tbsp), Green Salad (1 cup), Apple (1 small)",
-                    mealType: "Dinner",
-                    glycemicIndex: 42,
-                    calories: 310,
-                    carbohydrates: 52,
-                    protein: 12,
-                    fats: 5,
-                    fiber: 10,
-                    culturalSuitability: "Yes",
-                    allergenInformation: "None",
-                    cookingMethod: "Boiling, Raw",
-                    dietaryPreference: "Vegan",
-                },
+            Nutrition: {
+                "Fat(g)": 30,
+                "NetCarbs(g)": 82,
+                "Protein(g)": 78,
+                TotalCalories: 1150
+            },
+            PlanName: "Mediterranean (1800 cal)",
+            SpecialRecommendations: [
+                "Consider smaller, more frequent meals if appetite is reduced",
+                "Ensure adequate hydration throughout the day",
+                "Choose softer foods if chewing is difficult",
+                "Consider supplementing with vitamin D and calcium for bone health",
+                "Focus on heart-healthy fats like olive oil and avocados",
+                "Include soluble fiber from oats and barley to help lower cholesterol",
+                "Limit saturated fats from full-fat dairy and fatty meats"
             ],
-            "pescetarian": [
-                {
-                    mealId: "M001",
-                    mealDetails: "Red Raw Rice (1 cup), Dhal Curry (2 tbsp), Steamed Fish (1 piece), Bitter Gourd Curry (2 tbsp), Banana (1 small)",
-                    mealType: "Lunch",
-                    glycemicIndex: 50,
-                    calories: 340,
-                    carbohydrates: 44,
-                    protein: 19,
-                    fats: 8,
-                    fiber: 6,
-                    culturalSuitability: "Yes",
-                    allergenInformation: "Fish, Coconut milk",
-                    cookingMethod: "Boiling, Steaming",
-                    dietaryPreference: "Pescetarian",
-                },
-            ],
-            "non-vegetarian": [
-                {
-                    mealId: "M004",
-                    mealDetails: "Red Rice (1 cup), Chicken Curry (1 piece), Cucumber Salad (1/2 cup), Gotukola Sambol (2 tbsp), Papaya (1 slice)",
-                    mealType: "Dinner",
-                    glycemicIndex: 48,
-                    calories: 380,
-                    carbohydrates: 42,
-                    protein: 22,
-                    fats: 10,
-                    fiber: 7,
-                    culturalSuitability: "Yes",
-                    allergenInformation: "Chicken, Coconut",
-                    cookingMethod: "Boiling, Sautéing",
-                    dietaryPreference: "Non-vegetarian",
-                },
-            ]
-        };
-
-        // Default to non-vegetarian if preference not found
-        const preferredMeals = mealsByPreference[profile.dietaryPreferences.toLowerCase()] ||
-            mealsByPreference["non-vegetarian"];
-
-        // Filter meals based on allergies
-        const filteredMeals = preferredMeals.filter(meal => {
-            // Simple string matching for allergens - in real app would be more sophisticated
-            return !profile.allergies.some(allergy =>
-                meal.allergenInformation.toLowerCase().includes(allergy.toLowerCase())
-            );
-        });
-
-        return filteredMeals.length > 0 ? filteredMeals : [
-            {
-                mealId: "M005",
-                mealDetails: "Kurakkan Roti (2), Green Gram Curry (2 tbsp), Salad (1 cup), Papaya (1 small)",
-                mealType: "Breakfast",
-                glycemicIndex: 40,
-                calories: 280,
-                carbohydrates: 38,
-                protein: 10,
-                fats: 6,
-                fiber: 8,
-                culturalSuitability: "Yes",
-                allergenInformation: "None",
-                cookingMethod: "Grilling, Boiling",
-                dietaryPreference: "Any",
+            UserProfileMatch: {
+                AllergiesAvoided: profile.Allergies === "None" ? [] : [profile.Allergies],
+                DietaryPreference: profile.DietFollowed,
+                GlycemicLoad: "Medium",
+                SpecialConditions: profile.OtherConditions === "None" ? "None" : profile.OtherConditions,
+                TriggerFoodsAvoided: profile.TriggerFoods === "None" ? [] : [profile.TriggerFoods]
             }
-        ];
-    }
-
-    function getMealColor(mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack') {
-        const colors = {
-            'Breakfast': '#f59e0b',
-            'Lunch': '#10b981',
-            'Dinner': '#8b5cf6',
-            'Snack': '#3b82f6'
         };
-        return colors[mealType] || '#6b7280';
+
+        return mealPlan;
     }
 
-    function getMealIcon(mealType: string) {
-        switch (mealType) {
-            case 'Breakfast':
-                return (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                );
-            case 'Lunch':
-                return (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                );
-            case 'Dinner':
-                return (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                    </svg>
-                );
-            case 'Snack':
-                return (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                );
-            default:
-                return (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-                    </svg>
-                );
+    const getMealTypeColor = (mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack') => {
+        switch (mealType.toLowerCase()) {
+            case 'breakfast': return 'from-orange-400 to-yellow-300';
+            case 'lunch': return 'from-green-400 to-teal-300';
+            case 'dinner': return 'from-blue-400 to-indigo-300';
+            case 'snack': return 'from-purple-400 to-pink-300';
+            default: return 'from-gray-400 to-gray-300';
         }
-    }
-
-    function getNutritionColor(meal: MealRecommendation) {
-        // Calculate protein percentage
-        const totalNutrients = meal.carbohydrates + meal.protein + meal.fats;
-        const proteinPercentage = (meal.protein / totalNutrients) * 100;
-
-        // Color based on protein percentage
-        if (proteinPercentage >= 30) {
-            return '#10b981'; // green for high protein
-        } else if (proteinPercentage >= 20) {
-            return '#3b82f6'; // blue for medium protein
-        } else {
-            return '#f59e0b'; // amber for lower protein
-        }
-    }
+    };
 
     return (
         <div className="container mx-auto py-10">
@@ -349,12 +222,17 @@ export default function HealthProfilePage() {
                                     {/* Basic Information */}
                                     <FormField
                                         control={form.control}
-                                        name="userId"
+                                        name="Age"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>User ID</FormLabel>
+                                                <FormLabel>Age</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="Enter user ID" {...field} />
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="Enter your age"
+                                                        {...field}
+                                                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                                    />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -363,31 +241,7 @@ export default function HealthProfilePage() {
 
                                     <FormField
                                         control={form.control}
-                                        name="ageGroup"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Age Group</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select age group" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="18-30">18-30 years</SelectItem>
-                                                        <SelectItem value="31-45">31-45 years</SelectItem>
-                                                        <SelectItem value="46-60">46-60 years</SelectItem>
-                                                        <SelectItem value="60+">Above 60 years</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
-                                        name="gender"
+                                        name="Gender"
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Gender</FormLabel>
@@ -398,9 +252,8 @@ export default function HealthProfilePage() {
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
-                                                        <SelectItem value="male">Male</SelectItem>
-                                                        <SelectItem value="female">Female</SelectItem>
-                                                        <SelectItem value="other">Other</SelectItem>
+                                                        <SelectItem value="Male">Male</SelectItem>
+                                                        <SelectItem value="Female">Female</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage />
@@ -410,21 +263,78 @@ export default function HealthProfilePage() {
 
                                     <FormField
                                         control={form.control}
-                                        name="weightRange"
+                                        name="Weight"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Weight Range</FormLabel>
+                                                <FormLabel>Weight (kg)</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="Enter your weight in kg"
+                                                        {...field}
+                                                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="Height"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Height (cm)</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="Enter your height in cm"
+                                                        {...field}
+                                                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="FastingGlucose"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Fasting Glucose (mg/dL)</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="Enter your fasting glucose level"
+                                                        {...field}
+                                                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="DietFollowed"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Diet Followed</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl>
                                                         <SelectTrigger>
-                                                            <SelectValue placeholder="Select weight range" />
+                                                            <SelectValue placeholder="Select your diet" />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
-                                                        <SelectItem value="under50kg">Under 50 kg</SelectItem>
-                                                        <SelectItem value="50-70kg">50-70 kg</SelectItem>
-                                                        <SelectItem value="71-90kg">71-90 kg</SelectItem>
-                                                        <SelectItem value="over90kg">Over 90 kg</SelectItem>
+                                                        <SelectItem value="Vegetarian">Vegetarian</SelectItem>
+                                                        <SelectItem value="Vegan">Vegan</SelectItem>
+                                                        <SelectItem value="Pescetarian">Pescetarian</SelectItem>
+                                                        <SelectItem value="Non-vegetarian">Non-vegetarian</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage />
@@ -434,21 +344,21 @@ export default function HealthProfilePage() {
 
                                     <FormField
                                         control={form.control}
-                                        name="heightRange"
+                                        name="Allergies"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Height Range</FormLabel>
+                                                <FormLabel>Allergies</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl>
                                                         <SelectTrigger>
-                                                            <SelectValue placeholder="Select height range" />
+                                                            <SelectValue placeholder="Select allergies" />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
-                                                        <SelectItem value="under150cm">Under 150 cm</SelectItem>
-                                                        <SelectItem value="150-165cm">150-165 cm</SelectItem>
-                                                        <SelectItem value="166-180cm">166-180 cm</SelectItem>
-                                                        <SelectItem value="over180cm">Over 180 cm</SelectItem>
+                                                        <SelectItem value="None">None</SelectItem>
+                                                        <SelectItem value="Coconut sambol">Coconut sambol</SelectItem>
+                                                        <SelectItem value="Pickled vegetables">Pickled vegetables</SelectItem>
+                                                        <SelectItem value="Kiribath">Kiribath</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage />
@@ -456,23 +366,25 @@ export default function HealthProfilePage() {
                                         )}
                                     />
 
+
                                     <FormField
                                         control={form.control}
-                                        name="bmiCategory"
+                                        name="OtherConditions"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>BMI Category</FormLabel>
+                                                <FormLabel>Other Conditions</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl>
                                                         <SelectTrigger>
-                                                            <SelectValue placeholder="Select BMI category" />
+                                                            <SelectValue placeholder="Select other conditions" />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
-                                                        <SelectItem value="underweight">Underweight</SelectItem>
-                                                        <SelectItem value="normal">Normal</SelectItem>
-                                                        <SelectItem value="overweight">Overweight</SelectItem>
-                                                        <SelectItem value="obese">Obese</SelectItem>
+                                                        <SelectItem value="None">None</SelectItem>
+                                                        <SelectItem value="Diabetes">Diabetes</SelectItem>
+                                                        <SelectItem value="Prediabetes">Prediabetes</SelectItem>
+                                                        <SelectItem value="High cholesterol">High cholesterol</SelectItem>
+                                                        <SelectItem value="Hypertension">Hypertension</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage />
@@ -482,378 +394,24 @@ export default function HealthProfilePage() {
 
                                     <FormField
                                         control={form.control}
-                                        name="location"
+                                        name="TriggerFoods"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Location</FormLabel>
+                                                <FormLabel>Trigger Foods</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl>
                                                         <SelectTrigger>
-                                                            <SelectValue placeholder="Select location" />
+                                                            <SelectValue placeholder="Select trigger foods" />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
-                                                        <SelectItem value="colombo">Colombo</SelectItem>
-                                                        <SelectItem value="galle">Galle</SelectItem>
-                                                        <SelectItem value="kandy">Kandy</SelectItem>
-                                                        <SelectItem value="jaffna">Jaffna</SelectItem>
-                                                        <SelectItem value="other">Other</SelectItem>
+                                                        <SelectItem value="None">None</SelectItem>
+                                                        <SelectItem value="Sugary snacks">Sugary snacks</SelectItem>
+                                                        <SelectItem value="White bread">White bread</SelectItem>
+                                                        <SelectItem value="Nuts">Nuts</SelectItem>
+                                                        <SelectItem value="Dairy">Dairy</SelectItem>
                                                     </SelectContent>
                                                 </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    {/* Medical Information */}
-                                    <FormField
-                                        control={form.control}
-                                        name="diabetesDuration"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Diabetes Duration</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select diabetes duration" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="less1year">Less than 1 year</SelectItem>
-                                                        <SelectItem value="1-5years">1-5 years</SelectItem>
-                                                        <SelectItem value="6-10years">6-10 years</SelectItem>
-                                                        <SelectItem value="over10years">Over 10 years</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
-                                        name="medicationDuration"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Medication Duration</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select medication duration" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="less1year">Less than 1 year</SelectItem>
-                                                        <SelectItem value="1-5years">1-5 years</SelectItem>
-                                                        <SelectItem value="6-10years">6-10 years</SelectItem>
-                                                        <SelectItem value="over10years">Over 10 years</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
-                                        name="fastingBloodSugar"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Fasting Blood Sugar</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select fasting blood sugar range" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="under100">Under 100 mg/dL</SelectItem>
-                                                        <SelectItem value="100-125">100-125 mg/dL</SelectItem>
-                                                        <SelectItem value="126-150">126-150 mg/dL</SelectItem>
-                                                        <SelectItem value="151-200">151-200 mg/dL</SelectItem>
-                                                        <SelectItem value="over200">Over 200 mg/dL</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
-                                        name="postprandialBloodSugar"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Postprandial Blood Sugar</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select postprandial blood sugar range" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="under140">Under 140 mg/dL</SelectItem>
-                                                        <SelectItem value="140-180">140-180 mg/dL</SelectItem>
-                                                        <SelectItem value="181-220">181-220 mg/dL</SelectItem>
-                                                        <SelectItem value="over220">Over 220 mg/dL</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
-                                        name="hba1cLevel"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>HbA1c Level</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select HbA1c level" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="under5.7">Under 5.7%</SelectItem>
-                                                        <SelectItem value="5.7-6.4">5.7-6.4%</SelectItem>
-                                                        <SelectItem value="6.5-7.0">6.5-7.0%</SelectItem>
-                                                        <SelectItem value="7.1-8.0">7.1-8.0%</SelectItem>
-                                                        <SelectItem value="over8.0">Over 8.0%</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
-                                        name="dietaryPreferences"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Dietary Preferences</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select dietary preference" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="vegetarian">Vegetarian</SelectItem>
-                                                        <SelectItem value="vegan">Vegan</SelectItem>
-                                                        <SelectItem value="pescetarian">Pescetarian</SelectItem>
-                                                        <SelectItem value="non-vegetarian">Non-vegetarian</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-
-                                {/* Checkboxes for multiple selection fields */}
-                                <div className="space-y-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="chronicDiseases"
-                                        render={() => (
-                                            <FormItem>
-                                                <div className="mb-4">
-                                                    <FormLabel className="text-base">Chronic Diseases</FormLabel>
-                                                    <FormDescription>
-                                                        Select all chronic diseases that apply.
-                                                    </FormDescription>
-                                                </div>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                                    {chronicDiseaseOptions.map((option) => (
-                                                        <FormField
-                                                            key={option.id}
-                                                            control={form.control}
-                                                            name="chronicDiseases"
-                                                            render={({ field }) => {
-                                                                return (
-                                                                    <FormItem
-                                                                        key={option.id}
-                                                                        className="flex flex-row items-start space-x-3 space-y-0"
-                                                                    >
-                                                                        <FormControl>
-                                                                            <Checkbox
-                                                                                checked={field.value?.includes(option.id)}
-                                                                                onCheckedChange={(checked) => {
-                                                                                    return checked
-                                                                                        ? field.onChange([...field.value, option.id])
-                                                                                        : field.onChange(
-                                                                                            field.value?.filter(
-                                                                                                (value) => value !== option.id
-                                                                                            )
-                                                                                        );
-                                                                                }}
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormLabel className="font-normal">
-                                                                            {option.label}
-                                                                        </FormLabel>
-                                                                    </FormItem>
-                                                                );
-                                                            }}
-                                                        />
-                                                    ))}
-                                                </div>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
-                                        name="allergies"
-                                        render={() => (
-                                            <FormItem>
-                                                <div className="mb-4">
-                                                    <FormLabel className="text-base">Allergies</FormLabel>
-                                                    <FormDescription>
-                                                        Select all allergies that apply.
-                                                    </FormDescription>
-                                                </div>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                                    {allergyOptions.map((option) => (
-                                                        <FormField
-                                                            key={option.id}
-                                                            control={form.control}
-                                                            name="allergies"
-                                                            render={({ field }) => {
-                                                                return (
-                                                                    <FormItem
-                                                                        key={option.id}
-                                                                        className="flex flex-row items-start space-x-3 space-y-0"
-                                                                    >
-                                                                        <FormControl>
-                                                                            <Checkbox
-                                                                                checked={field.value?.includes(option.id)}
-                                                                                onCheckedChange={(checked) => {
-                                                                                    return checked
-                                                                                        ? field.onChange([...field.value, option.id])
-                                                                                        : field.onChange(
-                                                                                            field.value?.filter(
-                                                                                                (value) => value !== option.id
-                                                                                            )
-                                                                                        );
-                                                                                }}
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormLabel className="font-normal">
-                                                                            {option.label}
-                                                                        </FormLabel>
-                                                                    </FormItem>
-                                                                );
-                                                            }}
-                                                        />
-                                                    ))}
-                                                </div>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
-                                        name="avoidanceFoods"
-                                        render={() => (
-                                            <FormItem>
-                                                <div className="mb-4">
-                                                    <FormLabel className="text-base">Foods to Avoid</FormLabel>
-                                                    <FormDescription>
-                                                        Select all foods you want to avoid.
-                                                    </FormDescription>
-                                                </div>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                                    {avoidanceFoodOptions.map((option) => (
-                                                        <FormField
-                                                            key={option.id}
-                                                            control={form.control}
-                                                            name="avoidanceFoods"
-                                                            render={({ field }) => {
-                                                                return (
-                                                                    <FormItem
-                                                                        key={option.id}
-                                                                        className="flex flex-row items-start space-x-3 space-y-0"
-                                                                    >
-                                                                        <FormControl>
-                                                                            <Checkbox
-                                                                                checked={field.value?.includes(option.id)}
-                                                                                onCheckedChange={(checked) => {
-                                                                                    return checked
-                                                                                        ? field.onChange([...field.value, option.id])
-                                                                                        : field.onChange(
-                                                                                            field.value?.filter(
-                                                                                                (value) => value !== option.id
-                                                                                            )
-                                                                                        );
-                                                                                }}
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormLabel className="font-normal">
-                                                                            {option.label}
-                                                                        </FormLabel>
-                                                                    </FormItem>
-                                                                );
-                                                            }}
-                                                        />
-                                                    ))}
-                                                </div>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
-                                        name="cookingMethods"
-                                        render={() => (
-                                            <FormItem>
-                                                <div className="mb-4">
-                                                    <FormLabel className="text-base">Cooking Methods</FormLabel>
-                                                    <FormDescription>
-                                                        Select your preferred cooking methods.
-                                                    </FormDescription>
-                                                </div>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                                    {cookingMethodOptions.map((option) => (
-                                                        <FormField
-                                                            key={option.id}
-                                                            control={form.control}
-                                                            name="cookingMethods"
-                                                            render={({ field }) => {
-                                                                return (
-                                                                    <FormItem
-                                                                        key={option.id}
-                                                                        className="flex flex-row items-start space-x-3 space-y-0"
-                                                                    >
-                                                                        <FormControl>
-                                                                            <Checkbox
-                                                                                checked={field.value?.includes(option.id)}
-                                                                                onCheckedChange={(checked) => {
-                                                                                    return checked
-                                                                                        ? field.onChange([...field.value, option.id])
-                                                                                        : field.onChange(
-                                                                                            field.value?.filter(
-                                                                                                (value) => value !== option.id
-                                                                                            )
-                                                                                        );
-                                                                                }}
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormLabel className="font-normal">
-                                                                            {option.label}
-                                                                        </FormLabel>
-                                                                    </FormItem>
-                                                                );
-                                                            }}
-                                                        />
-                                                    ))}
-                                                </div>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
@@ -869,175 +427,231 @@ export default function HealthProfilePage() {
                 </Card>
 
                 {mealRecommendations.length > 0 && (
-                    <div className="space-y-6">
-                        <h2 className="text-3xl font-bold text-center text-primary">Your Personalized Meal Plan</h2>
-
-                        {/* Summary Stats */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-                                <CardContent className="pt-6">
-                                    <div className="text-center">
-                                        <div className="text-4xl font-bold text-blue-600">{mealRecommendations.length}</div>
-                                        <p className="text-blue-700 mt-2">Recommended Meals</p>
+                    <div className="bg-gradient-to-br from-blue-50 to-green-50 p-6 rounded-xl">
+                        <Card className="border-0 shadow-lg overflow-hidden">
+                            <CardHeader className="bg-gradient-to-r from-blue-600 to-green-500 text-white">
+                                <div className="flex items-center">
+                                    <div className="mr-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
+                                            <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7z" />
+                                            <path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" />
+                                            <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79 4-4 4z" />
+                                        </svg>
                                     </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-                                <CardContent className="pt-6">
-                                    <div className="text-center">
-                                        <div className="text-4xl font-bold text-green-600">
-                                            {Math.round(mealRecommendations.reduce((sum, meal) => sum + meal.calories, 0) / mealRecommendations.length)}
-                                        </div>
-                                        <p className="text-green-700 mt-2">Avg. Calories</p>
+                                    <div>
+                                        <CardTitle className="text-2xl font-bold">{mealRecommendations[0]?.PlanName}</CardTitle>
+                                        <CardDescription className="text-lg text-blue-100">
+                                            Personalized nutrition optimized for your needs
+                                        </CardDescription>
                                     </div>
-                                </CardContent>
-                            </Card>
+                                </div>
+                            </CardHeader>
 
-                            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-                                <CardContent className="pt-6">
-                                    <div className="text-center">
-                                        <div className="text-4xl font-bold text-purple-600">
-                                            {Math.round(mealRecommendations.reduce((sum, meal) => sum + meal.glycemicIndex, 0) / mealRecommendations.length)}
-                                        </div>
-                                        <p className="text-purple-700 mt-2">Avg. Glycemic Index</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
-                                <CardContent className="pt-6">
-                                    <div className="text-center">
-                                        <div className="text-4xl font-bold text-amber-600">
-                                            {Math.round(mealRecommendations.reduce((sum, meal) => sum + meal.protein, 0))}g
-                                        </div>
-                                        <p className="text-amber-700 mt-2">Total Protein</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        {/* Meal Cards */}
-                        <div className="space-y-4">
-                            {mealRecommendations.map((meal) => (
-                                <Card key={meal.mealId} className="overflow-hidden border-l-4 hover:shadow-lg transition-shadow duration-300"
-                                    style={{ borderLeftColor: getMealColor(meal.mealType as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack') }}>
-                                    <CardHeader className="bg-gray-50 pb-2">
-                                        <div className="flex justify-between items-center">
-                                            <div>
-                                                <CardTitle className="text-xl flex items-center">
-                                                    {getMealIcon(meal.mealType)}
-                                                    <span className="ml-2">{meal.mealType}</span>
-                                                </CardTitle>
-                                                <CardDescription>
-                                                    {meal.dietaryPreference} • GI: {meal.glycemicIndex} • {meal.calories} kcal
-                                                </CardDescription>
+                            <CardContent className="space-y-6 p-6">
+                                {/* Nutrition Summary - Colorful Cards with Icons */}
+                                <div className="bg-white p-5 rounded-xl shadow-md">
+                                    <h3 className="font-bold text-lg mb-4 text-blue-800 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 mr-2">
+                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                                        </svg>
+                                        Daily Nutrition Summary
+                                    </h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="bg-gradient-to-br from-blue-100 to-blue-200 p-4 rounded-lg shadow-sm border-l-4 border-blue-500">
+                                            <div className="flex justify-between items-center">
+                                                <p className="text-sm text-blue-700 font-medium">Total Calories</p>
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-blue-500">
+                                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
+                                                </svg>
                                             </div>
-                                            <div className="bg-white rounded-full p-2 shadow-sm">
-                                                <div className="w-12 h-12 rounded-full flex items-center justify-center"
-                                                    style={{ backgroundColor: getNutritionColor(meal) }}>
-                                                    <span className="text-white font-bold text-sm">
-                                                        {Math.round((meal.protein / (meal.carbohydrates + meal.protein + meal.fats)) * 100)}%
+                                            <p className="font-bold text-2xl text-blue-800">{mealRecommendations[0]?.Nutrition.TotalCalories} kcal</p>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-green-100 to-green-200 p-4 rounded-lg shadow-sm border-l-4 border-green-500">
+                                            <div className="flex justify-between items-center">
+                                                <p className="text-sm text-green-700 font-medium">Protein</p>
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-green-500">
+                                                    <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z" />
+                                                </svg>
+                                            </div>
+                                            <p className="font-bold text-2xl text-green-800">{mealRecommendations[0]?.Nutrition["Protein(g)"]}g</p>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-yellow-100 to-yellow-200 p-4 rounded-lg shadow-sm border-l-4 border-yellow-500">
+                                            <div className="flex justify-between items-center">
+                                                <p className="text-sm text-yellow-700 font-medium">Net Carbs</p>
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-yellow-500">
+                                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7z" />
+                                                </svg>
+                                            </div>
+                                            <p className="font-bold text-2xl text-yellow-800">{mealRecommendations[0]?.Nutrition["NetCarbs(g)"]}g</p>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-red-100 to-red-200 p-4 rounded-lg shadow-sm border-l-4 border-red-500">
+                                            <div className="flex justify-between items-center">
+                                                <p className="text-sm text-red-700 font-medium">Fat</p>
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-red-500">
+                                                    <path d="M20 13c.55 0 1-.45 1-1s-.45-1-1-1h-1V5h1c.55 0 1-.45 1-1s-.45-1-1-1H10c-.55 0-1 .45-1 1s.45 1 1 1h1v6H4c-.55 0-1 .45-1 1s.45 1 1 1h1v6H4c-.55 0-1 .45-1 1s.45 1 1 1h16c.55 0 1-.45 1-1s-.45-1-1-1h-1v-6h1zm-3 6H7v-6h10v6z" />
+                                                </svg>
+                                            </div>
+                                            <p className="font-bold text-2xl text-red-800">{mealRecommendations[0]?.Nutrition["Fat(g)"]}g</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Daily Meal Plan with Colorful Headers */}
+                                <div className="space-y-4">
+                                    <h3 className="font-bold text-lg text-blue-800 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 mr-2">
+                                            <path d="M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z" />
+                                        </svg>
+                                        Daily Meal Plan
+                                    </h3>
+
+                                    {mealRecommendations[0]?.Meals.map((meal) => (
+                                        <div key={meal.MealID} className="border rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
+                                            <div className={`bg-gradient-to-r ${getMealTypeColor(meal.Type as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack')} p-4 text-white`}>
+                                                <div className="flex justify-between items-center">
+                                                    <h4 className="font-semibold text-lg capitalize flex items-center">
+                                                        {meal.Type === "breakfast" && (
+                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 mr-2">
+                                                                <path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.9 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z" />
+                                                            </svg>
+                                                        )}
+                                                        {meal.Type === "lunch" && (
+                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 mr-2">
+                                                                <path d="M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z" />
+                                                            </svg>
+                                                        )}
+                                                        {meal.Type === "dinner" && (
+                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 mr-2">
+                                                                <path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z" />
+                                                            </svg>
+                                                        )}
+                                                        {meal.Type === "snack" && (
+                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 mr-2">
+                                                                <path d="M18 10V5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v5c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-2 0H4V5h12v5zm4-2h-2v2h2v-2zm0-5h-2v2h2V3zM2 19h18v2H2v-2zm18-5h-2v2h2v-2z" />
+                                                            </svg>
+                                                        )}
+                                                        {meal.Type}
+                                                    </h4>
+                                                    <span className="bg-white text-blue-800 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+                                                        {meal.Preferences}
                                                     </span>
                                                 </div>
-                                                <span className="text-xs text-center block mt-1">Protein</span>
-                                            </div>
-                                        </div>
-                                    </CardHeader>
-
-                                    <CardContent className="pt-4">
-                                        <div className="grid md:grid-cols-3 gap-4">
-                                            <div className="md:col-span-1">
-                                                <h4 className="font-medium text-gray-700 mb-2">Meal Details</h4>
-                                                <p className="text-gray-600">{meal.mealDetails}</p>
+                                                <p className="mt-1 text-white">{meal.MealDetails}</p>
                                             </div>
 
-                                            <div className="md:col-span-1">
-                                                <h4 className="font-medium text-gray-700 mb-2">Nutrition</h4>
-                                                <div className="space-y-1">
-                                                    <div className="flex justify-between">
-                                                        <span className="text-sm text-gray-600">Carbs</span>
-                                                        <span className="text-sm font-medium">{meal.carbohydrates}g</span>
+                                            <div className="p-4 bg-white">
+                                                <div className="grid grid-cols-4 gap-3">
+                                                    <div className="text-center">
+                                                        <p className="text-xs text-gray-500 mb-1">Calories</p>
+                                                        <p className="font-semibold text-blue-800">{meal.Calories} kcal</p>
                                                     </div>
-                                                    <div className="w-full bg-gray-200 rounded-full h-2">
-                                                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${(meal.carbohydrates / 100) * 100}%` }}></div>
+                                                    <div className="text-center">
+                                                        <p className="text-xs text-gray-500 mb-1">Protein</p>
+                                                        <p className="font-semibold text-green-700">{meal["Protein(g)"]}g</p>
                                                     </div>
-
-                                                    <div className="flex justify-between">
-                                                        <span className="text-sm text-gray-600">Protein</span>
-                                                        <span className="text-sm font-medium">{meal.protein}g</span>
+                                                    <div className="text-center">
+                                                        <p className="text-xs text-gray-500 mb-1">Carbs</p>
+                                                        <p className="font-semibold text-yellow-700">{meal["Carbs(g)"]}g</p>
                                                     </div>
-                                                    <div className="w-full bg-gray-200 rounded-full h-2">
-                                                        <div className="bg-green-500 h-2 rounded-full" style={{ width: `${(meal.protein / 30) * 100}%` }}></div>
-                                                    </div>
-
-                                                    <div className="flex justify-between">
-                                                        <span className="text-sm text-gray-600">Fats</span>
-                                                        <span className="text-sm font-medium">{meal.fats}g</span>
-                                                    </div>
-                                                    <div className="w-full bg-gray-200 rounded-full h-2">
-                                                        <div className="bg-amber-500 h-2 rounded-full" style={{ width: `${(meal.fats / 40) * 100}%` }}></div>
-                                                    </div>
-
-                                                    <div className="flex justify-between">
-                                                        <span className="text-sm text-gray-600">Fiber</span>
-                                                        <span className="text-sm font-medium">{meal.fiber}g</span>
-                                                    </div>
-                                                    <div className="w-full bg-gray-200 rounded-full h-2">
-                                                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${(meal.fiber / 25) * 100}%` }}></div>
+                                                    <div className="text-center">
+                                                        <p className="text-xs text-gray-500 mb-1">Fiber</p>
+                                                        <p className="font-semibold text-purple-700">{meal["Fiber(g)"]}g</p>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                            <div className="md:col-span-1">
-                                                <h4 className="font-medium text-gray-700 mb-2">Suitability</h4>
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center">
-                                                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-2">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                {meal.AllergyStatus !== "None" && (
+                                                    <div className="mt-3 bg-red-50 border-l-4 border-red-500 p-2 rounded">
+                                                        <span className="text-sm text-red-700 flex items-center">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mr-1">
+                                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
                                                             </svg>
-                                                        </div>
-                                                        <span className="text-sm">{meal.dietaryPreference} Diet</span>
+                                                            {meal.AllergyStatus}
+                                                        </span>
                                                     </div>
-
-                                                    <div className="flex items-center">
-                                                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-2">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                                            </svg>
-                                                        </div>
-                                                        <span className="text-sm">Allergens: {meal.allergenInformation !== "None" ? meal.allergenInformation : "No known allergens"}</span>
-                                                    </div>
-
-                                                    <div className="flex items-center">
-                                                        <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center mr-2">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2V6a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2z" />
-                                                            </svg>
-                                                        </div>
-                                                        <span className="text-sm">Cooking: {meal.cookingMethod}</span>
-                                                    </div>
-                                                </div>
+                                                )}
                                             </div>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
+                                    ))}
+                                </div>
 
-                        <div className="flex justify-between items-center mt-8">
-                            <p className="text-sm text-gray-500">
-                                These recommendations are based on your health profile and should be reviewed with a healthcare professional.
-                            </p>
-                            <Button variant="outline" onClick={() => setMealRecommendations([])}>
-                                Reset
-                            </Button>
-                        </div>
+                                {/* Special Recommendations */}
+                                <div className="bg-gradient-to-r from-amber-50 to-yellow-100 p-5 rounded-xl shadow-md border-l-4 border-yellow-400">
+                                    <h3 className="font-bold text-lg mb-3 text-yellow-800 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 mr-2">
+                                            <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6A4.997 4.997 0 0 1 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z" />
+                                        </svg>
+                                        Special Recommendations
+                                    </h3>
+                                    <ul className="space-y-2">
+                                        {mealRecommendations[0]?.SpecialRecommendations.map((rec, index) => (
+                                            <li key={index} className="flex items-start">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 mr-2 text-yellow-600 mt-0.5">
+                                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                                                </svg>
+                                                <span className="text-gray-800">{rec}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                {/* Profile Match */}
+                                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-5 rounded-xl shadow-md">
+                                    <h3 className="font-bold text-lg mb-3 text-indigo-800 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 mr-2">
+                                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                                        </svg>
+                                        Profile Match Details
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="bg-white p-3 rounded-lg shadow-sm">
+                                            <h4 className="font-medium text-indigo-700 mb-1">Dietary Preference</h4>
+                                            <p className="text-gray-800 flex items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mr-1 text-indigo-500">
+                                                    <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z" />
+                                                </svg>
+                                                {mealRecommendations[0]?.UserProfileMatch.DietaryPreference}
+                                            </p>
+                                        </div>
+                                        <div className="bg-white p-3 rounded-lg shadow-sm">
+                                            <h4 className="font-medium text-indigo-700 mb-1">Special Conditions</h4>
+                                            <p className="text-gray-800 flex items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mr-1 text-indigo-500">
+                                                    <path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z" />
+                                                </svg>
+                                                {mealRecommendations[0]?.UserProfileMatch.SpecialConditions}
+                                            </p>
+                                        </div>
+                                        <div className="bg-white p-3 rounded-lg shadow-sm">
+                                            <h4 className="font-medium text-indigo-700 mb-1">Allergies Avoided</h4>
+                                            <p className="text-gray-800 flex items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mr-1 text-indigo-500">
+                                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20zm6.31-3.1L7.1 5.69C8.45 4.63 10.15 4 12 4c4.42 0 8 3.58 8 8 0 1.85-.63 3.55-1.69 4.9z" />
+                                                </svg>
+                                                {mealRecommendations[0]?.UserProfileMatch.AllergiesAvoided.length > 0
+                                                    ? mealRecommendations[0]?.UserProfileMatch.AllergiesAvoided.join(", ")
+                                                    : "None"}
+                                            </p>
+                                        </div>
+                                        <div className="bg-white p-3 rounded-lg shadow-sm">
+                                            <h4 className="font-medium text-indigo-700 mb-1">Trigger Foods Avoided</h4>
+                                            <p className="text-gray-800 flex items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mr-1 text-indigo-500">
+                                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20zm6.31-3.1L7.1 5.69C8.45 4.63 10.15 4 12 4c4.42 0 8 3.58 8 8 0 1.85-.63 3.55-1.69 4.9z" />
+                                                </svg>
+                                                {mealRecommendations[0]?.UserProfileMatch.TriggerFoodsAvoided.length > 0
+                                                    ? mealRecommendations[0]?.UserProfileMatch.TriggerFoodsAvoided.join(", ")
+                                                    : "None"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
                 )}
+
+
             </div>
         </div>
-
     );
 }
