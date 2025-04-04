@@ -1,4 +1,3 @@
-// app/meal-recommendations/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -107,89 +106,38 @@ export default function HealthProfilePage() {
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true);
 
-        const healthProfile = {
-            id: uuidv4(),
-            ...values,
-        };
-
-        setTimeout(() => {
-            const recommendations = generateMealRecommendations(healthProfile);
-            setMealRecommendations([recommendations]);
-            setIsLoading(false);
-        }, 1500);
-    }
-
-    // Mock function to generate meal recommendations based on health profile
-    function generateMealRecommendations(profile: z.infer<typeof formSchema>): MealPlan {
-        const mealPlan = {
-            MealPlanID: Math.floor(Math.random() * 100) + 1,
-            Meals: [
-                {
-                    AllergyStatus: profile.Allergies === "None" ? "None" : `Contains ${profile.Allergies.toLowerCase()}`,
-                    Calories: 320,
-                    "Carbs(g)": 38,
-                    "Fiber(g)": 6,
-                    GlycemicLoad: "Medium",
-                    MealDetails: "Kiribath with sardine sambol",
-                    MealID: 1,
-                    MealName: "Mediterranean (1800 cal)",
-                    Preferences: profile.DietFollowed,
-                    "Protein(g)": 15,
-                    Type: "Breakfast"
+        try {
+            const response = await fetch('http://127.0.0.1:5000/ai/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'accept': 'application/json'
                 },
-                {
-                    AllergyStatus: profile.Allergies === "None" ? "None" : `Contains ${profile.Allergies.toLowerCase()}`,
-                    Calories: 480,
-                    "Carbs(g)": 45,
-                    "Fiber(g)": 12,
-                    GlycemicLoad: "Low",
-                    MealDetails: "Red rice, grilled seer fish, steamed greens",
-                    MealID: 2,
-                    MealName: "Mediterranean (1800 cal)",
-                    Preferences: profile.DietFollowed,
-                    "Protein(g)": 35,
-                    Type: "Lunch"
-                },
-                {
-                    AllergyStatus: profile.Allergies === "None" ? "None" : `Contains ${profile.Allergies.toLowerCase()}`,
-                    Calories: 350,
-                    "Carbs(g)": 25,
-                    "Fiber(g)": 8,
-                    GlycemicLoad: "Low",
-                    MealDetails: "Tuna salad with olive oil, kurakkan roti",
-                    MealID: 3,
-                    MealName: "Mediterranean (1800 cal)",
-                    Preferences: profile.DietFollowed,
-                    "Protein(g)": 28,
-                    Type: "Dinner"
-                }
-            ],
-            Nutrition: {
-                "Fat(g)": 30,
-                "NetCarbs(g)": 82,
-                "Protein(g)": 78,
-                TotalCalories: 1150
-            },
-            PlanName: "Mediterranean (1800 cal)",
-            SpecialRecommendations: [
-                "Consider smaller, more frequent meals if appetite is reduced",
-                "Ensure adequate hydration throughout the day",
-                "Choose softer foods if chewing is difficult",
-                "Consider supplementing with vitamin D and calcium for bone health",
-                "Focus on heart-healthy fats like olive oil and avocados",
-                "Include soluble fiber from oats and barley to help lower cholesterol",
-                "Limit saturated fats from full-fat dairy and fatty meats"
-            ],
-            UserProfileMatch: {
-                AllergiesAvoided: profile.Allergies === "None" ? [] : [profile.Allergies],
-                DietaryPreference: profile.DietFollowed,
-                GlycemicLoad: "Medium",
-                SpecialConditions: profile.OtherConditions === "None" ? "None" : profile.OtherConditions,
-                TriggerFoodsAvoided: profile.TriggerFoods === "None" ? [] : [profile.TriggerFoods]
+                body: JSON.stringify({
+                    Age: values.Age,
+                    Allergies: values.Allergies,
+                    DietFollowed: values.DietFollowed,
+                    FastingGlucose: values.FastingGlucose,
+                    Gender: values.Gender,
+                    Height: values.Height,
+                    OtherConditions: values.OtherConditions,
+                    TriggerFoods: values.TriggerFoods,
+                    Weight: values.Weight
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
             }
-        };
 
-        return mealPlan;
+            const data = await response.json();
+            setMealRecommendations([data]);
+        } catch (error) {
+            console.error('Error fetching meal recommendations:', error);
+            // You might want to show an error message to the user here
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     const getMealTypeColor = (mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack') => {
@@ -506,7 +454,7 @@ export default function HealthProfilePage() {
                                     </h3>
 
                                     {mealRecommendations[0]?.Meals.map((meal) => (
-                                        <div key={meal.MealID} className="border rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
+                                        <div key={`${meal.MealID}-${meal.Type}`} className="border rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
                                             <div className={`bg-gradient-to-r ${getMealTypeColor(meal.Type as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack')} p-4 text-white`}>
                                                 <div className="flex justify-between items-center">
                                                     <h4 className="font-semibold text-lg capitalize flex items-center">
