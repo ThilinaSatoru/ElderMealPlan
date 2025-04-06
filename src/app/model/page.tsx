@@ -73,14 +73,14 @@ type MealPlan = {
 
 // Form schema validation
 const formSchema = z.object({
-    Age: z.number().min(1, "Age is required").max(120, "Age must be realistic"),
+    Age: z.number().min(60, "Age is required").max(120, "Age must be realistic"),
     Gender: z.enum(["Male", "Female"]),
     Weight: z.number().min(20, "Weight must be realistic").max(300, "Weight must be realistic"),
     Height: z.number().min(100, "Height must be realistic").max(250, "Height must be realistic"),
     Allergies: z.enum(["None", "Coconut sambol", "Pickled vegetables", "Kiribath"]),
     DietFollowed: z.enum(["Vegetarian", "Vegan", "Pescetarian", "Non-vegetarian"]),
     FastingGlucose: z.number().min(50, "Glucose level must be realistic").max(500, "Glucose level must be realistic"),
-    OtherConditions: z.enum(["None", "Diabetes", "Prediabetes", "High cholesterol", "Hypertension"]),
+    OtherConditions: z.enum(["None", "Kidney disease", "Heart disease", "High cholesterol", "Hypertension"]),
     TriggerFoods: z.enum(["None", "Sugary snacks", "White bread", "Nuts", "Dairy"]),
 });
 
@@ -91,13 +91,13 @@ export default function HealthProfilePage() {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            Age: 0,
+            // Age: 0,
             Gender: "Female",
-            Weight: 0,
-            Height: 0,
+            // Weight: 0,
+            // Height: 0,
             Allergies: "None",
             DietFollowed: "Vegetarian",
-            FastingGlucose: 0,
+            // FastingGlucose: 0,
             OtherConditions: "None",
             TriggerFoods: "None",
         },
@@ -236,7 +236,7 @@ export default function HealthProfilePage() {
                                                 <FormLabel>Height (cm)</FormLabel>
                                                 <FormControl>
                                                     <Input
-                                                        type="number"
+                                                        type="text"
                                                         placeholder="Enter your height in cm"
                                                         {...field}
                                                         onChange={(e) => field.onChange(parseInt(e.target.value))}
@@ -329,8 +329,8 @@ export default function HealthProfilePage() {
                                                     </FormControl>
                                                     <SelectContent>
                                                         <SelectItem value="None">None</SelectItem>
-                                                        <SelectItem value="Diabetes">Diabetes</SelectItem>
-                                                        <SelectItem value="Prediabetes">Prediabetes</SelectItem>
+                                                        <SelectItem value="Kidney disease">Diabetes</SelectItem>
+                                                        <SelectItem value="Heart disease">Prediabetes</SelectItem>
                                                         <SelectItem value="High cholesterol">High cholesterol</SelectItem>
                                                         <SelectItem value="Hypertension">Hypertension</SelectItem>
                                                     </SelectContent>
@@ -373,7 +373,7 @@ export default function HealthProfilePage() {
                         </Form>
                     </CardContent>
                 </Card>
-
+{/* recommendation page                 *************************************************************************************************************** */}
                 {mealRecommendations.length > 0 && (
                     <div className="bg-gradient-to-br from-blue-50 to-green-50 p-6 rounded-xl">
                         <Card className="border-0 shadow-lg overflow-hidden">
