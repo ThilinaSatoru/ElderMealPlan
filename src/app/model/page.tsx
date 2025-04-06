@@ -77,11 +77,11 @@ const formSchema = z.object({
     Gender: z.enum(["Male", "Female"]),
     Weight: z.number().min(20, "Weight must be realistic").max(300, "Weight must be realistic"),
     Height: z.number().min(100, "Height must be realistic").max(250, "Height must be realistic"),
-    Allergies: z.enum(["None", "Coconut sambol", "Pickled vegetables", "Kiribath"]),
+    Allergies: z.enum(["None", "Nuts", "Dairy"]),
     DietFollowed: z.enum(["Vegetarian", "Vegan", "Pescetarian", "Non-vegetarian"]),
     FastingGlucose: z.number().min(50, "Glucose level must be realistic").max(500, "Glucose level must be realistic"),
     OtherConditions: z.enum(["None", "Kidney disease", "Heart disease", "High cholesterol", "Hypertension"]),
-    TriggerFoods: z.enum(["None", "Sugary snacks", "White bread", "Nuts", "Dairy"]),
+    TriggerFoods: z.enum(["None", "Sugary snacks", "White bread"]),
 });
 
 export default function HealthProfilePage() {
@@ -304,9 +304,9 @@ export default function HealthProfilePage() {
                                                     </FormControl>
                                                     <SelectContent>
                                                         <SelectItem value="None">None</SelectItem>
-                                                        <SelectItem value="Coconut sambol">Coconut sambol</SelectItem>
-                                                        <SelectItem value="Pickled vegetables">Pickled vegetables</SelectItem>
-                                                        <SelectItem value="Kiribath">Kiribath</SelectItem>
+                                                        <SelectItem value="Nuts">Nuts</SelectItem>
+                                                        <SelectItem value="Dairy">Dairy</SelectItem>
+                                                        {/* <SelectItem value="Kiribath">Kiribath</SelectItem> */}
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage />
@@ -329,8 +329,8 @@ export default function HealthProfilePage() {
                                                     </FormControl>
                                                     <SelectContent>
                                                         <SelectItem value="None">None</SelectItem>
-                                                        <SelectItem value="Kidney disease">Diabetes</SelectItem>
-                                                        <SelectItem value="Heart disease">Prediabetes</SelectItem>
+                                                        <SelectItem value="Kidney disease">Kidney disease</SelectItem>
+                                                        <SelectItem value="Heart disease">Heart disease</SelectItem>
                                                         <SelectItem value="High cholesterol">High cholesterol</SelectItem>
                                                         <SelectItem value="Hypertension">Hypertension</SelectItem>
                                                     </SelectContent>
@@ -356,8 +356,8 @@ export default function HealthProfilePage() {
                                                         <SelectItem value="None">None</SelectItem>
                                                         <SelectItem value="Sugary snacks">Sugary snacks</SelectItem>
                                                         <SelectItem value="White bread">White bread</SelectItem>
-                                                        <SelectItem value="Nuts">Nuts</SelectItem>
-                                                        <SelectItem value="Dairy">Dairy</SelectItem>
+                                                        {/* <SelectItem value="Nuts">Nuts</SelectItem>
+                                                        <SelectItem value="Dairy">Dairy</SelectItem> */}
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage />
