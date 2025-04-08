@@ -58,7 +58,7 @@ const formSchema = z.object({
     Weight: z.number().min(20, "Weight must be realistic").max(300, "Weight must be realistic"),
     Height: z.number().min(100, "Height must be realistic").max(250, "Height must be realistic"),
     Allergies: z.array(z.enum(["None", "Nuts", "Dairy"])).nonempty("At least one selection is required"),
-    DietFollowed: z.array(z.enum(["Vegetarian", "Vegan", "Pescetarian", "Non-vegetarian"])).nonempty("At least one selection is required"),
+    DietFollowed: z.string(z.enum(["Vegetarian", "Vegan", "Pescetarian", "Non-vegetarian"])).nonempty("At least one selection is required"),
     FastingGlucose: z.number().min(50, "Glucose level must be realistic").max(500, "Glucose level must be realistic"),
     OtherConditions: z.array(z.enum(["None", "Kidney disease", "Heart disease", "High cholesterol", "Hypertension"])).nonempty("At least one selection is required"),
     TriggerFoods: z.array(z.enum(["None", "Sugary snacks", "White bread"])).nonempty("At least one selection is required"),
@@ -73,7 +73,7 @@ export default function HealthProfilePage() {
         defaultValues: {
             Gender: "Female",
             Allergies: ["None"],
-            DietFollowed: ["Vegetarian"],
+            DietFollowed: "Vegetarian",
             OtherConditions: ["None"],
             TriggerFoods: ["None"],
         },
