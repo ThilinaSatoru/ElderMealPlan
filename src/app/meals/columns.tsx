@@ -258,8 +258,8 @@ export const meal_plan_columns: ColumnDef<MealPlan>[] = [
                             </div>
                         </div>
                         <DialogFooter className="flex justify-between">
-                            <Button variant="outline">Swap Meal</Button>
-                            <Button>Add to Plan</Button>
+                            {/* <Button variant="outline">Swap Meal</Button>
+                            <Button>Add to Plan</Button> */}
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
