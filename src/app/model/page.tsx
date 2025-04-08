@@ -1,37 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import {useState} from "react";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {useForm} from "react-hook-form";
 import * as z from "zod";
-import { v4 as uuidv4 } from "uuid";
 
-import { Button } from "@/components/ui/button";
-import {
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import {Button} from "@/components/ui/button";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select";
+import {Input} from "@/components/ui/input";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/components/ui/card";
+import ProtectedRoute from "../ProtectedRoute";
 
 type Meal = {
     AllergyStatus: string;
@@ -151,6 +130,7 @@ export default function HealthProfilePage() {
     };
 
     return (
+        <ProtectedRoute>
         <div className="container mx-auto py-10">
             <h1 className="text-3xl font-bold">Generate Healthy Meal Plan</h1>
             <p className="text-gray-500">Enter your health information to receive personalized meal recommendations</p>
@@ -601,5 +581,6 @@ export default function HealthProfilePage() {
 
             </div>
         </div>
+        </ProtectedRoute>
     );
 }
