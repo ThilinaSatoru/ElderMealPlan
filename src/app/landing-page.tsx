@@ -1,7 +1,7 @@
 import React from 'react';
-import { UserCircle2 } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {UserCircle2} from 'lucide-react';
+import {Button} from "@/components/ui/button";
+import {Card, CardContent} from "@/components/ui/card";
 
 export default function LandingPage() {
     return (
@@ -226,7 +226,9 @@ export default function LandingPage() {
                     <p className="mb-8">Join thousands of developers building amazing user experiences with our
                         components.</p>
                     <div className="flex flex-col sm:flex-row justify-center gap-4">
-                        <Button size="lg" variant="secondary">Start Your Plan</Button>
+                        <a href="/model" className="hover:text-primary"><Button className="cursor-pointer" size="lg"
+                                                                                variant="secondary">Start Your
+                            Plan</Button></a>
                         <Button size="lg" variant="outline"
                                 className="bg-transparent border-white hover:bg-white hover:text-primary">
                             View Documentation
