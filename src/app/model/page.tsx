@@ -11,6 +11,7 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/
 import {Input} from "@/components/ui/input";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/components/ui/card";
 import ProtectedRoute from "../ProtectedRoute";
+import FilterableStringList from "@/components/multi-combo";
 
 type Meal = {
     AllergyStatus: string;
@@ -50,17 +51,17 @@ type MealPlan = {
     UserProfileMatch: UserProfileMatch;
 };
 
-// Form schema validation
+// Update your form schema to use arrays for multi-select fields
 const formSchema = z.object({
     Age: z.number().min(60, "Age is required").max(120, "Age must be realistic"),
     Gender: z.enum(["Male", "Female"]),
     Weight: z.number().min(20, "Weight must be realistic").max(300, "Weight must be realistic"),
     Height: z.number().min(100, "Height must be realistic").max(250, "Height must be realistic"),
-    Allergies: z.enum(["None", "Nuts", "Dairy"]),
-    DietFollowed: z.enum(["Vegetarian", "Vegan", "Pescetarian", "Non-vegetarian"]),
+    Allergies: z.array(z.enum(["None", "Nuts", "Dairy"])).nonempty("At least one selection is required"),
+    DietFollowed: z.array(z.enum(["Vegetarian", "Vegan", "Pescetarian", "Non-vegetarian"])).nonempty("At least one selection is required"),
     FastingGlucose: z.number().min(50, "Glucose level must be realistic").max(500, "Glucose level must be realistic"),
-    OtherConditions: z.enum(["None", "Kidney disease", "Heart disease", "High cholesterol", "Hypertension"]),
-    TriggerFoods: z.enum(["None", "Sugary snacks", "White bread"]),
+    OtherConditions: z.array(z.enum(["None", "Kidney disease", "Heart disease", "High cholesterol", "Hypertension"])).nonempty("At least one selection is required"),
+    TriggerFoods: z.array(z.enum(["None", "Sugary snacks", "White bread"])).nonempty("At least one selection is required"),
 });
 
 export default function HealthProfilePage() {
@@ -70,15 +71,11 @@ export default function HealthProfilePage() {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            // Age: 0,
             Gender: "Female",
-            // Weight: 0,
-            // Height: 0,
-            Allergies: "None",
-            DietFollowed: "Vegetarian",
-            // FastingGlucose: 0,
-            OtherConditions: "None",
-            TriggerFoods: "None",
+            Allergies: ["None"],
+            DietFollowed: ["Vegetarian"],
+            OtherConditions: ["None"],
+            TriggerFoods: ["None"],
         },
     });
 
@@ -113,7 +110,6 @@ export default function HealthProfilePage() {
             setMealRecommendations([data]);
         } catch (error) {
             console.error('Error fetching meal recommendations:', error);
-            // You might want to show an error message to the user here
         } finally {
             setIsLoading(false);
         }
@@ -252,7 +248,7 @@ export default function HealthProfilePage() {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Diet Followed</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <Select onValueChange={field.onChange}>
                                                     <FormControl>
                                                         <SelectTrigger>
                                                             <SelectValue placeholder="Select your diet" />
@@ -276,19 +272,14 @@ export default function HealthProfilePage() {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Allergies</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select allergies" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="None">None</SelectItem>
-                                                        <SelectItem value="Nuts">Nuts</SelectItem>
-                                                        <SelectItem value="Dairy">Dairy</SelectItem>
-                                                        {/* <SelectItem value="Kiribath">Kiribath</SelectItem> */}
-                                                    </SelectContent>
-                                                </Select>
+                                                <FilterableStringList
+                                                    items={["None", "Nuts", "Dairy"]}
+                                                    selectedItems={field.value}
+                                                    onItemSelect={(selected: any) => field.onChange(selected)}
+                                                    placeholder="Select allergies..."
+                                                    emptyMessage="No allergies found"
+                                                    multiSelect={true}
+                                                />
                                                 <FormMessage />
                                             </FormItem>
                                         )}
@@ -301,20 +292,14 @@ export default function HealthProfilePage() {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Other Conditions</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select other conditions" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="None">None</SelectItem>
-                                                        <SelectItem value="Kidney disease">Kidney disease</SelectItem>
-                                                        <SelectItem value="Heart disease">Heart disease</SelectItem>
-                                                        <SelectItem value="High cholesterol">High cholesterol</SelectItem>
-                                                        <SelectItem value="Hypertension">Hypertension</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
+                                                <FilterableStringList
+                                                    items={["None", "Kidney disease", "Heart disease", "High cholesterol", "Hypertension"]}
+                                                    selectedItems={field.value}
+                                                    onItemSelect={(selected: any) => field.onChange(selected)}
+                                                    placeholder="Select conditions..."
+                                                    emptyMessage="No conditions found"
+                                                    multiSelect={true}
+                                                />
                                                 <FormMessage />
                                             </FormItem>
                                         )}
@@ -326,29 +311,23 @@ export default function HealthProfilePage() {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Trigger Foods</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select trigger foods" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="None">None</SelectItem>
-                                                        <SelectItem value="Sugary snacks">Sugary snacks</SelectItem>
-                                                        <SelectItem value="White bread">White bread</SelectItem>
-                                                        {/* <SelectItem value="Nuts">Nuts</SelectItem>
-                                                        <SelectItem value="Dairy">Dairy</SelectItem> */}
-                                                    </SelectContent>
-                                                </Select>
+                                                <FilterableStringList
+                                                    items={["None", "Sugary snacks", "White bread"]}
+                                                    selectedItems={field.value}
+                                                    onItemSelect={(selected: any) => field.onChange(selected)}
+                                                    placeholder="Select trigger foods..."
+                                                    emptyMessage="No trigger foods found"
+                                                    multiSelect={true}
+                                                />
                                                 <FormMessage />
                                             </FormItem>
                                         )}
                                     />
-                                </div>
 
                                 <Button type="submit" className="w-full" disabled={isLoading}>
                                     {isLoading ? "Processing..." : "Generate Meal Recommendations"}
                                 </Button>
+                                </div>
                             </form>
                         </Form>
                     </CardContent>
